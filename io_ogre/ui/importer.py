@@ -40,7 +40,7 @@ class _OgreCommonImport_(object):
 
     @classmethod
     def poll(cls, context):
-        if context.mode != 'EDIT_MESH':
+        if context.mode == 'OBJECT':
             return True
 
     def __init__(self):
@@ -89,7 +89,7 @@ class _OgreCommonImport_(object):
 
         # Options associated with each section
         section_options = {
-            "General" : ["IM_SWAP_AXIS", "IM_V2_MESH_TOOL_VERSION", "IM_IMPORT_XML_DELETE"], 
+            "General" : ["IM_IMPORT_RESOURCE_PATH", "IM_V2_MESH_TOOL_VERSION"],
             "Armature" : ["IM_IMPORT_ANIMATIONS", "IM_ROUND_FRAMES", "IM_USE_SELECTED_SKELETON"], 
             "Mesh" : ["IM_IMPORT_NORMALS", "IM_MERGE_SUBMESHES"], 
             "Shape Keys" : ["IM_IMPORT_SHAPEKEYS"], 
@@ -116,15 +116,15 @@ class _OgreCommonImport_(object):
     def execute(self, context):
         """ Calls to this Operator can set unfiltered filepaths, ensure the file extension is .mesh, .xml or .scene. """
         if not self.filepath or not (\
-           self.filepath.endswith(".mesh") or \
-           self.filepath.endswith(".xml") or \
-           self.filepath.endswith(".scene")):
+           self.filepath.lower().endswith(".mesh") or \
+           self.filepath.lower().endswith(".xml") or \
+           self.filepath.lower().endswith(".scene")):
             return {'CANCELLED'}
 
         # Add warning about missing XML converter
         Report.reset()
         if self.converter == "unknown":
-            Report.errors.append(
+            Report.warnings.append(
               "Cannot find suitable OgreXMLConverter or OgreMeshTool executable." +
               "Import XML mesh - does NOT automatically convert .mesh to .xml file. You MUST run converter on the mesh manually.")
 
@@ -197,13 +197,13 @@ class _OgreCommonImport_(object):
         config.update(**kw)
 
         target_path, target_file_name = os.path.split(os.path.abspath(self.filepath))
-        target_file_name = clean_object_name(target_file_name)
+        # Preserve the source filename, including spaces and Unicode.
         target_file_name_no_ext = os.path.splitext(target_file_name)[0]
 
         file_handler = None
 
         # Add a file handler to all Logger instances
-        if config.get('ENABLE_LOGGING') is True:
+        if config.get('ENABLE_LOGGING') is True and os.path.isdir(target_path) and os.access(target_path, os.W_OK):
             log_file = os.path.join(target_path, "blender2ogre.log")
             logger.info("Writing log file to: %s" % log_file)
 
@@ -226,24 +226,28 @@ class _OgreCommonImport_(object):
         logger.info("Target_file_name: %s" % target_file_name)
 
         Report.importing = True
-        if target_file_name.lower().endswith(".scene"):
-            ogre_import.load_scene(os.path.join(target_path, target_file_name))
-        else:
-            ogre_import.load_mesh(os.path.join(target_path, target_file_name))
+        from ..safety import ImportTransaction
+        result = {'CANCELLED'}
+        try:
+            with ImportTransaction() as transaction:
+                if target_file_name.lower().endswith(".scene"):
+                    result = ogre_import.load_scene(os.path.join(target_path, target_file_name))
+                else:
+                    result = ogre_import.load_mesh(os.path.join(target_path, target_file_name))
+                if result == {'FINISHED'} and not Report.errors:
+                    transaction.commit()
+        except Exception as exc:
+            logger.exception('OGRE import failed')
+            Report.errors.append(str(exc))
+            self.report({'WARNING'}, 'OGRE import failed: ' + str(exc))
+        finally:
+            if file_handler is not None:
+                for logger_name in list(logging.Logger.manager.loggerDict):
+                    logging.getLogger(logger_name).removeHandler(file_handler)
+                file_handler.close()
         Report.show()
 
-        # Flush and close all logging file handlers
-        if config.get('ENABLE_LOGGING') is True:
-            for logger_name in logging.Logger.manager.loggerDict.keys():
-                logger_instance = logging.getLogger(logger_name)
-
-                # Remove handlers
-                logger_instance.handlers.clear()
-
-            file_handler.flush()
-            file_handler.close()
-
-        return {'FINISHED'}
+        return result if result == {'FINISHED'} and not Report.errors else {'CANCELLED'}
 
     filepath : StringProperty(name="File Path",
         description="Filepath used for importing Ogre .mesh and .scene files",
@@ -264,6 +268,11 @@ class _OgreCommonImport_(object):
     # IM_Vx_<config-name> for OgreXMLConverter and OgreMeshTool (hide only when no converter found)
 
     # General
+    IM_IMPORT_RESOURCE_PATH : StringProperty(
+        name='Resource Folder',
+        description='Optional folder containing shared material scripts and textures. Nearby recognized asset packs are found automatically',
+        subtype='DIR_PATH',
+        default=config.get('IMPORT_RESOURCE_PATH')) = {}
     IM_SWAP_AXIS : EnumProperty(
         items=config.AXIS_MODES,
         name='Swap Axis',
@@ -338,7 +347,7 @@ if bpy.app.version >= (4, 1, 0):
 
         @classmethod
         def poll_drop(cls, context):
-            if context.mode != 'EDIT_MESH':
+            if context.mode == 'OBJECT':
                 return True
 
 

@@ -17,8 +17,8 @@
 bl_info = {
     "name": "OGRE Importer-Exporter (.scene, .mesh, .skeleton)",
     "author": "Brett, S.Rombauts, F00bar, Waruck, Mind Calamity, Mr.Magne, Jonne Nauha, vax456, Richard Plangger, Pavel Rojtberg, Guillermo Ojea Quintana",
-    "version": (0, 9, 0),
-    "blender": (2, 80, 0),
+    "version": (0, 9, 8),
+    "blender": (5, 2, 0),
     "location": "File > Import and Export...",
     "description": "Import and Export to and from Ogre xml and binary formats",
     "wiki_url": "https://github.com/OGRECave/blender2ogre",
@@ -103,6 +103,8 @@ def register():
 
     logging.info('Starting io_ogre %s', bl_info["version"])
 
+    properties.register()
+
     # The UI modules define auto_register functions that
     # return classes that should be loaded by the plugin
     for clazz in ui.auto_register(True):
@@ -124,6 +126,7 @@ def unregister():
         bpy.utils.unregister_class(clazz)
 
     bpy.utils.unregister_class(Blender2OgreAddonPreferences)
+    properties.unregister()
 
 if __name__ == "__main__":
     register()
