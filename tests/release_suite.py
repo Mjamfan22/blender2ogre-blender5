@@ -12,7 +12,7 @@ import bpy
 import addon_utils
 from mathutils import Vector, Quaternion
 
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 MODULE_ROOT=Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv and len(sys.argv)>sys.argv.index('--')+1 else ROOT
 sys.path.insert(0,str(MODULE_ROOT))
 addon_utils.enable('io_ogre',default_set=True,persistent=False)
@@ -21,7 +21,7 @@ from io_ogre import animation, config, util
 from io_ogre.ogre import mesh as mesh_export
 from io_ogre.report import Report
 
-OUT=ROOT/'ChatGPT/outputs/release_suite'/uuid.uuid4().hex[:8]
+OUT=ROOT/'.build/outputs/release_suite'/uuid.uuid4().hex[:8]
 OUT.mkdir(parents=True)
 RESULTS=[]
 
@@ -335,7 +335,7 @@ def unicode_and_spaced_input_paths():
 @case
 def existing_rig_name_is_not_reused():
     folder=OUT/'rig'; folder.mkdir()
-    source=ROOT/'ChatGPT/fixtures/ogre_samples'
+    source=ROOT/'tests/fixtures/ogre_samples'
     for name in ('robot.mesh','robot.skeleton'): shutil.copy2(source/name,folder/name)
     data=bpy.data.armatures.new('robot'); existing=bpy.data.objects.new('robot',data)
     bpy.context.collection.objects.link(existing)
@@ -372,7 +372,7 @@ def binary_unicode_directory():
 def animated_robot_deformation_roundtrip():
     from mathutils.kdtree import KDTree
     folder=OUT/'animated_robot'; folder.mkdir()
-    source=ROOT/'ChatGPT/fixtures/ogre_samples'
+    source=ROOT/'tests/fixtures/ogre_samples'
     for name in ('robot.mesh','robot.skeleton'): shutil.copy2(source/name,folder/name)
     assert bpy.ops.ogre.import_mesh(filepath=str(folder/'robot.mesh'),IM_USE_SELECTED_SKELETON=False)=={'FINISHED'}
     obj=next(o for o in bpy.context.scene.objects if o.type=='MESH')
@@ -426,7 +426,7 @@ def combined_material_scene_references_exist():
 
 addon_utils.disable('io_ogre',default_set=True)
 record={'blender':bpy.app.version_string,'module_root':str(MODULE_ROOT),'output':str(OUT),'tests':RESULTS}
-(ROOT/'ChatGPT/outputs/release_results.json').write_text(json.dumps(record,indent=2))
+(ROOT/'.build/outputs/release_results.json').write_text(json.dumps(record,indent=2))
 for result in RESULTS: print('PASS' if result['passed'] else 'FAIL',result['test'])
 assert all(item['passed'] for item in RESULTS),'Release regression failed; see release_results.json'
 print('RELEASE_SUITE_PASS',len(RESULTS))

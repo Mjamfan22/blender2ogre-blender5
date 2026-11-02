@@ -4,11 +4,11 @@ The default regression runner generates its fixtures and runs 65 checks. Eight a
 
 | Fixture | Location for full-mode reproduction |
 | --- | --- |
-| OGRE robot.mesh, robot.skeleton, ogrehead.mesh | `ChatGPT/fixtures/ogre_samples/` (from the OGRE sample distribution; keep its original licensing) |
-| Issue #142 untitled.blend | `ChatGPT/fixtures/reporters/142/untitled.blend` |
-| Issue #240 swaptest.blend | `ChatGPT/fixtures/reporters/240/swaptest.blend` |
-| Private Bakugan pack | `ChatGPT/fixtures/bakugan_pack/`, preserving crd_trucks/parts layout and sources.json |
-| Previous-release corner snapshots | `ChatGPT/outputs/import_benchmark_baseline.npz` and its matching baseline JSON; privately regenerate using v0.9.6, not the current version |
+| OGRE robot.mesh, robot.skeleton, ogrehead.mesh | `tests/fixtures/ogre_samples/` (from the OGRE sample distribution; keep its original licensing) |
+| Issue #142 untitled.blend | `tests/fixtures/reporters/142/untitled.blend` |
+| Issue #240 swaptest.blend | `tests/fixtures/reporters/240/swaptest.blend` |
+| Private Bakugan pack | `tests/fixtures/bakugan_pack/`, preserving crd_trucks/parts layout and sources.json |
+| Previous-release corner snapshots | `.build/outputs/import_benchmark_baseline.npz` and its matching baseline JSON; privately regenerate using v0.9.6, not the current version |
 
 Reporter #142 archive: https://github.com/OGRECave/blender2ogre/files/8840314/untitled.zip · SHA-256 `8aac04994358f8ac3fc9c0676ba996307809d7e1dd404cfb8306ed376c2353c9`.
 

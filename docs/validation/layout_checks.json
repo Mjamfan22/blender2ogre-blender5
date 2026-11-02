@@ -1,0 +1,9 @@
+{
+  "version": "0.9.8",
+  "blender": "5.2.3 LTS",
+  "installed_zip": true,
+  "passed": 73,
+  "failed": 0,
+  "skipped": [],
+  "full_suite": true
+}

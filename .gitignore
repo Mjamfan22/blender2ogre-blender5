@@ -3,13 +3,9 @@ __pycache__/
 *.blend1
 *.blend2
 .DS_Store
-ChatGPT/outputs/
-ChatGPT/profile/
-ChatGPT/temp/
-ChatGPT/backups/
-ChatGPT/references/
-ChatGPT/fixtures/*
-!ChatGPT/fixtures/README.md
+/.build/
+/tests/fixtures/*
+!/tests/fixtures/README.md
 *.zip
 *.log
 .env

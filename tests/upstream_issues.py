@@ -4,14 +4,14 @@ import json, sys, traceback, uuid, math, shutil
 import xml.etree.ElementTree as ET
 import bpy, addon_utils
 from mathutils import Matrix, Vector, Quaternion
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 MODULE_ROOT=Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv and len(sys.argv)>sys.argv.index('--')+1 else ROOT
 sys.path.insert(0,str(MODULE_ROOT))
 addon_utils.enable('io_ogre',default_set=True,persistent=False)
 from io_ogre import config, util, animation
 from io_ogre.report import Report
 from io_ogre.ogre.material import OgreMaterialGenerator
-OUT=ROOT/'ChatGPT/outputs/upstream_issues'/uuid.uuid4().hex[:8]
+OUT=ROOT/'.build/outputs/upstream_issues'/uuid.uuid4().hex[:8]
 OUT.mkdir(parents=True)
 RESULTS=[]
 
@@ -325,7 +325,7 @@ def issue142_shared_skeleton_falls_back_for_distinct_bind_space():
     assert any('bind spaces differ' in w for w in Report.warnings),Report.warnings
 
 def load_fixture(number, name):
-    file=ROOT/'ChatGPT/fixtures/reporters'/str(number)/name
+    file=ROOT/'tests/fixtures/reporters'/str(number)/name
     with bpy.data.libraries.load(str(file),link=False) as (source,target):
         target.objects=source.objects
     for obj in target.objects:
@@ -416,7 +416,7 @@ def issue142_reporter_animated_character_roundtrip():
 
 addon_utils.disable('io_ogre',default_set=True)
 record={'blender':bpy.app.version_string,'module_root':str(MODULE_ROOT),'output':str(OUT),'tests':RESULTS}
-(ROOT/'ChatGPT/outputs/upstream_results.json').write_text(json.dumps(record,indent=2))
+(ROOT/'.build/outputs/upstream_results.json').write_text(json.dumps(record,indent=2))
 for result in RESULTS: print('PASS' if result['passed'] else 'FAIL',result['test'])
 assert all(item['passed'] for item in RESULTS),'Upstream regressions failed; see upstream_results.json'
 print('UPSTREAM_SUITE_PASS',len(RESULTS))

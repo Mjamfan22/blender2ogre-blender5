@@ -7,8 +7,8 @@ import bpy
 import addon_utils
 from mathutils import Vector
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'ChatGPT/outputs/review_demo'
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / '.build/outputs/review_demo'
 OUT.mkdir(parents=True, exist_ok=True)
 images = ROOT / 'docs/images'
 images.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@ from pathlib import Path
 import sys,json,traceback,uuid
 import numpy as np
 import bpy,addon_utils
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 MODULE_ROOT=Path(args[0]) if args else ROOT
 sys.path.insert(0,str(MODULE_ROOT)); addon_utils.enable('io_ogre',default_set=True,persistent=False)
@@ -11,7 +11,7 @@ from io_ogre import config
 from io_ogre.report import Report
 from io_ogre.ogre import fast_xml
 from io_ogre.ogre.validation import validate_mesh
-OUT=ROOT/'ChatGPT/outputs/import_performance'/uuid.uuid4().hex[:8]; OUT.mkdir(parents=True)
+OUT=ROOT/'.build/outputs/import_performance'/uuid.uuid4().hex[:8]; OUT.mkdir(parents=True)
 RESULTS=[]
 
 def case(fn):
@@ -90,15 +90,15 @@ def multiple_vertex_buffers_and_declared_counts():
 
 @case
 def full_bakugan_import_matches_previous_release():
-    baseline=np.load(ROOT/'ChatGPT/outputs/import_benchmark_baseline.npz')
-    optimized=np.load(ROOT/'ChatGPT/outputs/import_benchmark_optimized.npz')
+    baseline=np.load(ROOT/'.build/outputs/import_benchmark_baseline.npz')
+    optimized=np.load(ROOT/'.build/outputs/import_benchmark_optimized.npz')
     differences={}
     for key,tolerance in [('positions',1e-6),('uvs',1e-6),('normals',1e-4),('materials',0)]:
         assert baseline[key].shape==optimized[key].shape,(key,baseline[key].shape,optimized[key].shape)
         np.testing.assert_allclose(baseline[key],optimized[key],atol=tolerance,rtol=0,err_msg=key)
         differences[key]=float(np.max(np.abs(baseline[key]-optimized[key])))
-    before=json.loads((ROOT/'ChatGPT/outputs/import_benchmark_baseline.json').read_text())
-    after=json.loads((ROOT/'ChatGPT/outputs/import_benchmark_optimized.json').read_text())
+    before=json.loads((ROOT/'.build/outputs/import_benchmark_baseline.json').read_text())
+    after=json.loads((ROOT/'.build/outputs/import_benchmark_optimized.json').read_text())
     assert before['triangles']==after['triangles']==190826
     assert before['uv_layers']==after['uv_layers']==8
     assert sorted(before['material_names'])==sorted(after['material_names'])
@@ -108,11 +108,11 @@ def full_bakugan_import_matches_previous_release():
         'speedup':before['seconds']/after['seconds'],'baseline_vertices':before['vertices'],
         'optimized_vertices':after['vertices'],'triangles':after['triangles'],'uv_layers':after['uv_layers'],
         'maximum_corner_differences':differences,'installed_module_root':str(MODULE_ROOT)}
-    (ROOT/'ChatGPT/outputs/import_speedup.json').write_text(json.dumps(record,indent=2))
+    (ROOT/'.build/outputs/import_speedup.json').write_text(json.dumps(record,indent=2))
 
 addon_utils.disable('io_ogre',default_set=True)
 record={'module_root':str(MODULE_ROOT),'blender':bpy.app.version_string,'output':str(OUT),'tests':RESULTS}
-(ROOT/'ChatGPT/outputs/import_performance_results.json').write_text(json.dumps(record,indent=2))
+(ROOT/'.build/outputs/import_performance_results.json').write_text(json.dumps(record,indent=2))
 for item in RESULTS: print('PASS' if item['passed'] else 'FAIL',item['test'])
 assert all(item['passed'] for item in RESULTS),'Fast import regression failed'
 print('IMPORT_PERFORMANCE_PASS',len(RESULTS))

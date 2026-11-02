@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import bpy
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 def capture():
     window = bpy.context.window_manager.windows[0]
     for area in window.screen.areas:
@@ -20,7 +20,7 @@ def capture():
     output = ROOT / 'docs/images/blender-viewport.png'
     with bpy.context.temp_override(window=window):
         bpy.ops.screen.screenshot(filepath=str(output))
-    (ROOT / 'ChatGPT/outputs/viewport_capture.json').write_text(json.dumps({
+    (ROOT / '.build/outputs/viewport_capture.json').write_text(json.dumps({
         'method': 'bpy.ops.screen.screenshot', 'blender': bpy.app.version_string,
         'areas': [area.type for area in window.screen.areas], 'output': output.name,
     }, indent=2))

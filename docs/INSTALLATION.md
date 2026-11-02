@@ -2,7 +2,7 @@
 
 Verified platform: **Windows x64, Blender 5.2.3 LTS**, classic OGRE workflow. The installer bundles the Windows OGRE 13.3.2 converter/upgrader and their required DLLs. See [licenses](../NOTICE.md).
 
-1. Download `blender2ogre_Blender_5_2_v0.9.8.zip` from the private draft release. Check its SHA-256 against `SHA256SUMS.txt` or [the runtime manifest](../ChatGPT/evidence/runtime_manifest.json).
+1. Download `blender2ogre_Blender_5_2_v0.9.8.zip` from the private draft release. Check its SHA-256 against `SHA256SUMS.txt` or [the runtime manifest](../docs/validation/runtime_manifest.json).
 2. Save open work. In **Edit → Preferences → Add-ons**, disable any older `io_ogre` copy. Keep one installation of this module.
 3. Choose **Install from Disk**, select the ZIP, and enable **OGRE Importer-Exporter (.scene, .mesh, .skeleton)**.
 4. Fully close and reopen Blender. Confirm the add-on shows **0.9.8**, then use **File → Import → Ogre3D (.scene and .mesh)** or the matching Export entry.

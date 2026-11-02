@@ -9,7 +9,7 @@ Snapshot: 2026-10-25, all 27 open issues, with all available discussion comments
 The issue endpoint also returned PR #258; it is excluded from the issue count.
 Upstream master remains `0d094a40a589752802a9f8823cf08cd8acd6f8fe` (2026-03-15).
 The original discussion snapshot is retained locally; this review repository includes the status summary and test results.
-Reporter fixture source URLs and hashes are recorded in `ChatGPT/fixtures/README.md`; the files are not redistributed here.
+Reporter fixture source URLs and hashes are recorded in `tests/fixtures/README.md`; the files are not redistributed here.
 
 These are local adaptation results. No upstream issue was closed, comment posted, pull request created or GitHub repository changed. Verified means tested in Windows x64 / Blender 5.2.3 with the bundled classic OGRE tools; it does not establish behavior in an arbitrary game engine or Linux distribution.
 

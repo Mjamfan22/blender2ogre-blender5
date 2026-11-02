@@ -12,4 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validate source, documentation and exact installer bytes
-        run: python3 ChatGPT/tools/repository_checks.py
+        run: python3 tools/repository_checks.py

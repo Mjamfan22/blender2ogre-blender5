@@ -8,7 +8,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from mathutils import Vector
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 module_root = Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv and len(sys.argv)>sys.argv.index('--')+1 else ROOT
 sys.path.insert(0, str(module_root))
 import bpy
@@ -18,7 +18,7 @@ assert addon_utils.check('io_ogre')[1]
 from io_ogre import config, util
 from io_ogre.report import Report
 
-OUT = ROOT/'ChatGPT/outputs/workflow'
+OUT = ROOT/'.build/outputs/workflow'
 OUT.mkdir(parents=True, exist_ok=True)
 RESULTS = []
 
@@ -175,7 +175,7 @@ def node_animation():
 
 @case
 def original_robot_animations():
-    source=ROOT/'ChatGPT/fixtures/ogre_samples'
+    source=ROOT/'tests/fixtures/ogre_samples'
     folder=OUT/'robot'
     folder.mkdir(exist_ok=True)
     for name in ('robot.mesh','robot.skeleton'): shutil.copy2(source/name,folder/name)
@@ -195,7 +195,7 @@ def original_robot_animations():
 @case
 def original_ogrehead():
     folder=OUT/'ogrehead'; folder.mkdir(exist_ok=True)
-    source=ROOT/'ChatGPT/fixtures/ogre_samples/ogrehead.mesh'
+    source=ROOT/'tests/fixtures/ogre_samples/ogrehead.mesh'
     shutil.copy2(source,folder/source.name)
     assert bpy.ops.ogre.import_mesh(filepath=str(folder/source.name))=={'FINISHED'}
     assert len(bpy.context.active_object.data.vertices)>1000
@@ -254,7 +254,7 @@ def register_cycle():
 
 addon_utils.disable('io_ogre',default_set=True)
 report={'blender':bpy.app.version_string,'module_root':str(module_root),'tests':RESULTS}
-(ROOT/'ChatGPT/outputs/workflow_results.json').write_text(json.dumps(report,indent=2))
+(ROOT/'.build/outputs/workflow_results.json').write_text(json.dumps(report,indent=2))
 for result in RESULTS: print('PASS' if result['passed'] else 'FAIL',result['test'])
 assert all(r['passed'] for r in RESULTS), 'See workflow_results.json'
 print('WORKFLOW_PASS')

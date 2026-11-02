@@ -8,20 +8,21 @@ import subprocess
 import sys
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[2]
-manifest = json.loads((ROOT / 'ChatGPT/evidence/runtime_manifest.json').read_text())
+ROOT = Path(__file__).resolve().parents[1]
+assert not (ROOT / 'ChatGPT').exists(), 'Use the standard tests/tools/docs layout'
+manifest = json.loads((ROOT / 'docs/validation/runtime_manifest.json').read_text())
 runtime = {p.relative_to(ROOT).as_posix(): p for p in (ROOT / 'io_ogre').rglob('*') if p.is_file() and '__pycache__' not in p.parts}
 assert set(runtime) == set(manifest['runtime_sha256']), 'Runtime file inventory differs'
 for name, path in runtime.items():
     assert hashlib.sha256(path.read_bytes()).hexdigest() == manifest['runtime_sha256'][name], name
     assert path.name.lower() not in ('agents.md', 'skill.md')
-for folder in ('io_ogre', 'ChatGPT/tools', 'ChatGPT/tests'):
+for folder in ('io_ogre', 'tools', 'tests'):
     for path in (ROOT / folder).rglob('*.py'):
         ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
-for directory in ('ChatGPT/temp', 'ChatGPT/outputs'):
+for directory in ('.build/temp', '.build/outputs'):
     (ROOT / directory).mkdir(parents=True, exist_ok=True)
-subprocess.run([sys.executable, str(ROOT / 'ChatGPT/tools/package.py')], cwd=ROOT, check=True)
-candidate = json.loads((ROOT / 'ChatGPT/outputs/package_manifest.json').read_text())
+subprocess.run([sys.executable, str(ROOT / 'tools/package.py')], cwd=ROOT, check=True)
+candidate = json.loads((ROOT / '.build/outputs/package_manifest.json').read_text())
 assert candidate['sha256'] == manifest['sha256'] and candidate['bytes'] == manifest['bytes']
 with zipfile.ZipFile(candidate['archive']) as archive:
     assert archive.testzip() is None
@@ -35,7 +36,7 @@ for path in documents:
         if target.startswith(('https://', 'http://', '#', 'mailto:')): continue
         destination = (path.parent / target.split('#')[0]).resolve()
         assert destination.is_relative_to(ROOT) and destination.exists(), (str(path.relative_to(ROOT)), target)
-for path in [*documents, *(ROOT / 'ChatGPT/evidence').glob('*.json')]:
+for path in [*documents, *(ROOT / 'docs/validation').glob('*.json')]:
     text = path.read_text(encoding='utf-8')
     assert not re.search(r'[CD]:\\(?:Users\\mjamf|BM Chassis Pack|Blender[45]ImporterExporter)', text, re.I), path
 print('REPOSITORY_INTEGRITY_PASS', manifest['version'], manifest['files'], manifest['sha256'])

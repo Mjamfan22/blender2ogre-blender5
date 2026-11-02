@@ -2,7 +2,7 @@
 from pathlib import Path
 import json, sys, traceback, uuid, hashlib
 import bpy, addon_utils
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 MODULE_ROOT=Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv and len(sys.argv)>sys.argv.index('--')+1 else ROOT
 sys.path.insert(0,str(MODULE_ROOT))
 addon_utils.enable('io_ogre',default_set=True,persistent=False)
@@ -11,7 +11,7 @@ from io_ogre.report import Report
 from io_ogre.ogre.material_parser import MaterialParser
 from io_ogre.ogre.material_resolver import MaterialResolver
 from io_ogre.ogre.resource_index import ResourceIndex
-OUT=ROOT/'ChatGPT/outputs/material_resources'/uuid.uuid4().hex[:8]
+OUT=ROOT/'.build/outputs/material_resources'/uuid.uuid4().hex[:8]
 OUT.mkdir(parents=True)
 RESULTS=[]
 
@@ -132,7 +132,7 @@ def inherited_alpha_rejection_preserves_image_alpha():
 
 @case
 def reported_bakugan_body_imports_all_three_base_textures():
-    fixture=ROOT/'ChatGPT/fixtures/bakugan_pack'
+    fixture=ROOT/'tests/fixtures/bakugan_pack'
     sources=json.loads((fixture/'sources.json').read_text())
     before={entry['source']:hashlib.sha256(Path(entry['source']).read_bytes()).hexdigest() for entry in sources}
     file=fixture/'crd_trucks/bakugan_dragonoid/bakugan_dragonoid_body.mesh'
@@ -166,7 +166,7 @@ def reported_bakugan_body_imports_all_three_base_textures():
 
 addon_utils.disable('io_ogre',default_set=True)
 record={'blender':bpy.app.version_string,'module_root':str(MODULE_ROOT),'output':str(OUT),'tests':RESULTS}
-(ROOT/'ChatGPT/outputs/material_resources_results.json').write_text(json.dumps(record,indent=2))
+(ROOT/'.build/outputs/material_resources_results.json').write_text(json.dumps(record,indent=2))
 for item in RESULTS: print('PASS' if item['passed'] else 'FAIL',item['test'])
 assert all(item['passed'] for item in RESULTS),'Material resource regressions failed'
 print('MATERIAL_RESOURCES_PASS',len(RESULTS))

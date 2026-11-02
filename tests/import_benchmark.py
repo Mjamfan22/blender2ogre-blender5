@@ -2,7 +2,7 @@
 from pathlib import Path
 import json, sys, time, platform
 import bpy, addon_utils, numpy as np
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[1]
 args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 MODULE_ROOT=Path(args[0]) if args else ROOT
 LABEL=args[1] if len(args)>1 else 'baseline'
@@ -34,7 +34,7 @@ for material in list(bpy.data.materials): bpy.data.materials.remove(material)
 for image in list(bpy.data.images):
     if image.type!='RENDER_RESULT': bpy.data.images.remove(image)
 config.CONFIG.update(config._CONFIG_DEFAULTS_ALL)
-file=ROOT/'ChatGPT/fixtures/bakugan_pack/crd_trucks/bakugan_dragonoid/bakugan_dragonoid_body.mesh'
+file=ROOT/'tests/fixtures/bakugan_pack/crd_trucks/bakugan_dragonoid/bakugan_dragonoid_body.mesh'
 start=time.perf_counter()
 result=bpy.ops.ogre.import_mesh(filepath=str(file),IM_USE_SELECTED_SKELETON=False,IM_Vx_ENABLE_LOGGING=False)
 elapsed=time.perf_counter()-start
@@ -54,7 +54,7 @@ corners=positions.reshape(-1,3)[indices].reshape(-1,9)
 uv_data=np.concatenate(uvs,axis=1).reshape(len(mesh.polygons),-1) if uvs else np.empty((len(mesh.polygons),0))
 keys=np.concatenate((material_ids,np.round(corners,5),np.round(uv_data,6)),axis=1)
 order=np.lexsort(keys[:,::-1].T[::-1])
-prefix=ROOT/'ChatGPT/outputs'/('import_benchmark_'+LABEL)
+prefix=ROOT/'.build/outputs'/('import_benchmark_'+LABEL)
 np.savez_compressed(str(prefix)+'.npz',positions=corners[order],normals=normals.reshape(-1,9)[order],uvs=uv_data[order],materials=material_ids[order])
 record={'version':'.'.join(map(str,io_ogre.bl_info['version'])),'label':LABEL,'blender':bpy.app.version_string,
     'platform':platform.platform(),'module_root':str(MODULE_ROOT),'seconds':elapsed,'phases':PHASES,

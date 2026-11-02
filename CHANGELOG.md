@@ -1,5 +1,7 @@
 # Blender 5.2 adaptation 0.9.8
 
+Repository documentation update: restored the original project description, added a consolidated fixes/improvements list, and organized development files into `tests/`, `tools/` and `docs/validation/`. Build outputs and disposable profiles now live under ignored `.build/`. The verified installer and runtime behavior are unchanged.
+
 Prepares the existing fixes for private GitHub review. Runtime import/export behavior is unchanged from 0.9.7.
 
 - Updates the installer version and installation guide, and corrects the stale adaptation version in the third-party notice.
@@ -45,7 +47,7 @@ First repair batch from an audit of all 27 open OGRECave/blender2ogre issues. Th
 - Corrects exported bone IDs when filtering deform bones, and throttles unshared-mesh progress reporting.
 - Replaces the dead Meshmoon tutorial link and documents external materials, cumulative animation authoring, collider integration and Linux dependency limits.
 
-Validation adds 22 issue/related regressions to the previous 37 checks and runs all 59 from an independently installed ZIP in Blender 5.2.3. The original animated character and nested-scene attachments are tested numerically. Character weight trimming is disabled for the deformation comparison. Disabling skeletal export no longer leaves a dangling skeleton reference. AO export, direct binary serialization, automatic compound physics shapes, full OgreNext rendering and Linux runtime verification remain open work; detailed statuses and evidence are under the optional ChatGPT development folder.
+Validation adds 22 issue/related regressions to the previous 37 checks and runs all 59 from an independently installed ZIP in Blender 5.2.3. The original animated character and nested-scene attachments are tested numerically. Character weight trimming is disabled for the deformation comparison. Disabling skeletal export no longer leaves a dangling skeleton reference. AO export, direct binary serialization, automatic compound physics shapes, full OgreNext rendering and Linux runtime verification remain open work; detailed statuses and evidence are in the development documentation.
 
 # Blender 5.2 adaptation 0.9.4
 
@@ -62,6 +64,6 @@ This release hardens the classic OGRE workflow for Windows x64 and Blender 5.2.3
 - Runs native tools against isolated scratch copies to support non-ASCII asset paths. Adds timeouts, relocated bundled tool recovery, configuration validation, and atomic configuration saves.
 - Validates geometry references before constructing Blender mesh arrays and retains source triangle topology and custom normals.
 
-Validation uses factory-startup background Blender processes with isolated profiles, real converter and upgrader binaries, generated failure fixtures, and original OGRE sample assets. It includes an independently installed copy of the final ZIP. Development evidence and test tools are optional and live under `ChatGPT`; the installer contains runtime files, user documentation, and licenses only.
+Validation uses factory-startup background Blender processes with isolated profiles, real converter and upgrader binaries, generated failure fixtures, and original OGRE sample assets. It includes an independently installed copy of the final ZIP. Development evidence and test tools are optional and kept in the development folders; the installer contains runtime files, user documentation, and licenses only.
 
 The bundled converter remains OGRE 13.3.2 for the verified classic workflow. This release does not claim verified OGRENext, custom engine shaders, or every advanced upstream exporter option. See `README.md` for installation, migration, usage, and the precise compatibility limits.
