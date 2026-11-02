@@ -1,16 +1,18 @@
 # Blender 5.2 adaptation 0.9.8
 
+Public fork update: connected the adaptation to OGRECave/blender2ogre's fork network, retained the existing project URL and original README/images, and updated the contribution and installation guides for public access. The release and review PR remain drafts. The installer is unchanged.
+
 Presentation update: restored the actual original blender2ogre README sections and their images, appended our fixes separately, and removed the generated demo gallery and preview scripts. The installer is unchanged.
 
 Repository documentation update: restored the original project description, added a consolidated fixes/improvements list, and organized development files into `tests/`, `tools/` and `docs/validation/`. Build outputs and disposable profiles now live under ignored `.build/`. The verified installer and runtime behavior are unchanged.
 
-Prepares the existing fixes for private GitHub review. Runtime import/export behavior is unchanged from 0.9.7.
+Prepares the existing fixes for GitHub review. Runtime import/export behavior is unchanged from 0.9.7.
 
 - Updates the installer version and installation guide, and corrects the stale adaptation version in the third-party notice.
 - Adds repository-level review documentation, patch notes, validation evidence, screenshots, source history and a draft release alongside the self-contained installer. These review assets are outside the installable add-on.
 - Carries forward the faster XML and bulk mesh import, shared material resource lookup, animation fixes and protected import/export workflows from the previous releases.
 
-All 73 regressions run against the installed 0.9.8 ZIP in isolated Blender 5.2.3. See the private repository's review guide for scope, evidence and remaining limitations.
+All 73 regressions run against the installed 0.9.8 ZIP in isolated Blender 5.2.3. See the repository's review guide for scope, evidence and remaining limitations.
 
 # Blender 5.2 adaptation 0.9.7
 

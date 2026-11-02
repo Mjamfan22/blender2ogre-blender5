@@ -1,6 +1,6 @@
 # Upstream issue audit and first repair batch
 
-Historical audit from 2026-10-25/26, included for the 2026-11-02 private review. References to unchanged GitHub state below describe that original audit; this private repository now contains the adaptation. No upstream repository state was changed.
+Historical audit from 2026-10-25/26, included for the 2026-11-02 review. References to unchanged GitHub state below describe that original audit; this public fork now contains the adaptation. No upstream issues or pull requests were changed by this work.
 
 Update 2026-10-26: v0.9.6 extends issue #156 coverage to the user's complete Bakugan resource-pack layout, including abstract pass templates and shared global material/texture lookup. See [material resource guide](../io_ogre/MATERIALS.md). That installer had 68 checks; v0.9.8 has 73, including five performance checks. The table below records the original v0.9.5 audit unless this update says otherwise.
 

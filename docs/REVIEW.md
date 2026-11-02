@@ -6,11 +6,11 @@ The README restores the actual upstream sections and their original images, foll
 
 1. Read [the patch notes](../CHANGELOG.md) for the full progression from 0.9.4 to 0.9.8.
 2. Review the draft PR comparing `main` with `upstream/master`. The latter is the exact original adaptation baseline; it is a comparison reference. Leave the PR in draft while reviewing.
-3. Download the draft release ZIP and compare its SHA-256 with [the validation record](../docs/validation/runtime_manifest.json). Install the ZIP, not the repository's source archive.
+3. Repository maintainers can download the draft release ZIP; public visitors can build the same installer as described in [installation](INSTALLATION.md). Compare its SHA-256 with [the validation record](../docs/validation/runtime_manifest.json). Install the ZIP, not the repository's source archive.
 4. In a disposable Blender scene, import a mesh, inspect its normals/UVs/materials, preview its animation if present, then export and re-import a copy. Save existing work before restarting Blender.
 5. Read [the validation limits](VALIDATION.md), [upstream issue audit](UPSTREAM_ISSUES.md) and [remaining work](ROADMAP.md). The audit describes the 2026-10-25 snapshot, not the current issue count or upstream closure status.
 
-The installer is self-contained. Tests, build scripts and validation records are never included in it. The original libraries and the user's installed add-on were not changed for this GitHub preparation. The repository and release remain private; the release and PR remain drafts for the owner's review.
+The installer is self-contained. Tests, build scripts and validation records are never included in it. The original libraries and the user's installed add-on were not changed for this GitHub preparation. The repository is public and belongs to OGRECave/blender2ogre's fork network; the release and PR remain drafts for the owner's review.
 
 ## Suggested review points
 

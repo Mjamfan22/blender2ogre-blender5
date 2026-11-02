@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem with this private Blender 5.2 adaptation
+about: Report a reproducible problem with this Blender 5.2 adaptation
 title: ''
 labels: bug
 assignees: ''

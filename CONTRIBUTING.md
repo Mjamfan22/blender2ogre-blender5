@@ -1,6 +1,6 @@
 # Contributing and local checks
 
-This private repository is for the owner's review. Preserve the upstream identity, copyright and LGPL licensing. Keep runtime behavior changes separate from documentation-only changes, and describe the trigger, resulting behavior and relevant validation in PRs.
+This public fork maintains the Blender 5.2 adaptation of OGRECave/blender2ogre. Preserve the upstream identity, copyright and LGPL licensing. Keep runtime behavior changes separate from documentation-only changes, and describe the trigger, resulting behavior and relevant validation in PRs. Report adaptation-specific bugs in this fork's issue tracker; the review PR compares our changes with the pinned upstream baseline.
 
 Upstream example/legacy test folders and older root topic documents are retained as reference material. The commands below and the current guides under `docs` describe this adaptation's verification.
 
