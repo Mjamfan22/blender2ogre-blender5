@@ -1,0 +1,43 @@
+{
+  "version": "0.9.6",
+  "label": "baseline",
+  "blender": "5.2.3 LTS",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "module_root": "<local>/addons",
+  "seconds": 39.018724699970335,
+  "phases": {
+    "xOpenFile": {
+      "seconds": 19.035632899962366,
+      "calls": 1
+    },
+    "xCollectMeshData": {
+      "seconds": 11.021800799993798,
+      "calls": 1
+    },
+    "validation": {
+      "seconds": 0.17778569995425642,
+      "calls": 1
+    },
+    "materials": {
+      "seconds": 0.022339300019666553,
+      "calls": 1
+    },
+    "bCreateSubMeshes": {
+      "seconds": 5.7354345000348985,
+      "calls": 1
+    },
+    "bCreateMesh": {
+      "seconds": 5.748475199914537,
+      "calls": 1
+    }
+  },
+  "vertices": 364266,
+  "triangles": 190826,
+  "uv_layers": 8,
+  "material_names": [
+    "V5Windshield",
+    "bakugan_dragonoid_body",
+    "Fiberglass"
+  ],
+  "warnings": []
+}

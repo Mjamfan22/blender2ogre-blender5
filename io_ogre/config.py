@@ -1,4 +1,4 @@
-import bpy, os, sys, logging, mathutils, json
+import bpy, os, sys, logging, mathutils, json, shutil, tempfile
 from pprint import pprint
 from bpy.props import *
 
@@ -36,6 +36,7 @@ CONFIG = {}
 _CONFIG_DEFAULTS_ALL = {
     # General
     'SWAP_AXIS' : 'xz-y',
+    'EXPORT_PREFIX' : '',
     'MESH_TOOL_VERSION' : 'v2',
     'EXPORT_XML_DELETE' : True,
 
@@ -47,7 +48,7 @@ _CONFIG_DEFAULTS_ALL = {
     'FORCE_CAMERA' : True,
     'FORCE_LIGHTS' : True,
     'NODE_ANIMATION' : True,
-    #'NODE_KEYFRAMES' : False,
+    'NODE_KEYFRAMES' : False,
     'EXPORT_SKYBOX': False,
     'SKYBOX_RESOLUTION': 2048,
 
@@ -74,6 +75,7 @@ _CONFIG_DEFAULTS_ALL = {
 
     # Mesh
     'MESH' : True,
+    'APPLY_MODIFIERS' : True,
     'MESH_OVERWRITE' : True,
     'ARRAY' : True,
     'EXTREMITY_POINTS' : 0,
@@ -103,6 +105,7 @@ _CONFIG_DEFAULTS_ALL = {
     #'SHOW_LOG_NAME' : False,
 
     # Import
+    'IMPORT_RESOURCE_PATH' : '',
     'IMPORT_XML_DELETE' : False,
     'IMPORT_NORMALS' : True,
     'MERGE_SUBMESHES' : True,
@@ -118,13 +121,15 @@ _CONFIG_TAGS_ = 'OGRETOOLS_XML_CONVERTER OGRETOOLS_MESH_UPGRADER MESH_PREVIEWER 
     Ogre tools from various default folders. Also consider making a installer that
     ships Ogre cmd line tools to ease the setup steps for end users. '''
 
+_BUNDLED_TOOLS = os.path.join(os.path.dirname(__file__), 'tools', 'windows')
+
 _CONFIG_DEFAULTS_WINDOWS = {
-    'OGRETOOLS_XML_CONVERTER' : 'C:\\OgreCommandLineTools\\OgreXMLConverter.exe',
-    'OGRETOOLS_MESH_UPGRADER' : 'C:\\OgreCommandLineTools\\OgreMeshUpgrader.exe',
+    'OGRETOOLS_XML_CONVERTER' : os.path.join(_BUNDLED_TOOLS, 'OgreXMLConverter.exe'),
+    'OGRETOOLS_MESH_UPGRADER' : os.path.join(_BUNDLED_TOOLS, 'OgreMeshUpgrader.exe'),
     'MESH_PREVIEWER' : 'ogre-meshviewer.bat',
     'IMAGE_MAGICK_CONVERT' : 'C:\\Program Files\\ImageMagick\\convert.exe',
     'USER_MATERIALS' : '',
-    'SHADER_PROGRAMS' : 'C:\\'
+    'SHADER_PROGRAMS' : ''
 }
 
 _CONFIG_DEFAULTS_UNIX = {
@@ -172,6 +177,19 @@ def load_config():
     else:
         logger.error('Config file: %s does not exist' % CONFIG_FILEPATH)
 
+    if not isinstance(config_dict, dict):
+        logger.warning('Ignoring a config file whose root is not an object')
+        config_dict = {}
+    for tag, default in _CONFIG_DEFAULTS_ALL.items():
+        value = config_dict.get(tag, default)
+        if type(value) is not type(default):
+            config_dict[tag] = default
+    enums = {'SWAP_AXIS':AXIS_MODES, 'MESH_TOOL_VERSION':MESH_TOOL_VERSIONS,
+             'GENERATE_TANGENTS':TANGENT_MODES, 'LOD_GENERATION':LOD_METHODS}
+    for tag, items in enums.items():
+        if config_dict.get(tag, _CONFIG_DEFAULTS_ALL[tag]) not in {item[0] for item in items}:
+            config_dict[tag] = _CONFIG_DEFAULTS_ALL[tag]
+
     # Load default values from _CONFIG_DEFAULTS_ALL if they don't exist after loading config from file
     for tag in _CONFIG_DEFAULTS_ALL:
         if tag not in config_dict:
@@ -188,27 +206,22 @@ def load_config():
                 logger.error('Unknown platform: %s' % sys.platform)
                 assert 0
 
-    # Setup temp hidden RNA to expose the file paths
     for tag in _CONFIG_TAGS_:
-        default = config_dict[ tag ]
-        #func = eval( 'lambda self,con: config_dict.update( {"%s" : self.%s} )' %(tag,tag) )
-        func = lambda self,con: config_dict.update( {tag : getattr(self,tag,default)} )
-        if type(default) is bool:
-            prop = BoolProperty( name=tag,
-                                 description='updates bool setting',
-                                 default=default,
-                                 options={'SKIP_SAVE'},
-                                 update=func)
-        else:
-            prop = StringProperty( name=tag,
-                    description='updates path setting',
-                    maxlen=128,
-                    default=default,
-                    options={'SKIP_SAVE'},
-                    update=func)
-        setattr( bpy.types.WindowManager, tag, prop )
-
+        if not isinstance(config_dict[tag], str):
+            config_dict[tag] = (_CONFIG_DEFAULTS_WINDOWS if sys.platform.startswith('win') else _CONFIG_DEFAULTS_UNIX)[tag]
+        config_dict[tag] = resolve_bundled_tool(tag, config_dict[tag])
     return config_dict
+
+
+def resolve_bundled_tool(tag, value):
+    """Repair relocated bundled/old default paths; preserve external tool choices."""
+    if sys.platform.startswith('win') and tag in ('OGRETOOLS_XML_CONVERTER','OGRETOOLS_MESH_UPGRADER'):
+        bundled = _CONFIG_DEFAULTS_WINDOWS[tag]
+        expected = os.path.basename(bundled).lower()
+        if os.path.basename(value).lower() == expected and not shutil.which(value) and os.path.isfile(bundled):
+            logger.info('Using bundled tool after its previous path became unavailable: %s', tag)
+            return bundled
+    return value
 
 def get(name, default=None):
     global CONFIG
@@ -236,8 +249,11 @@ def save_config():
     #for key in CONFIG: print( '%s = %s' %(key, CONFIG[key]) )
     if os.path.isdir( CONFIG_PATH ):
         try:
-            with open( os.path.join(CONFIG_FILEPATH), 'w' ) as f:
-                f.write(json.dumps(CONFIG, indent=4))
+            with tempfile.NamedTemporaryFile(mode='w', encoding='utf8', dir=CONFIG_PATH,
+                    prefix='io_ogre_', suffix='.tmp', delete=False) as f:
+                temporary = f.name
+                json.dump(CONFIG, f, indent=4)
+            os.replace(temporary, CONFIG_FILEPATH)
         except Exception as e:
             logger.error('Can not write to %s' % CONFIG_FILEPATH)
             logger.error('Exception: %s' % e)
@@ -251,4 +267,4 @@ def update_from_addon_preference(context):
     for key in _CONFIG_TAGS_:
         addon_pref_value = getattr(addon_preferences,key,None)
         if addon_pref_value is not None:
-            CONFIG[key] = addon_pref_value
+            CONFIG[key] = resolve_bundled_tool(key, addon_pref_value)

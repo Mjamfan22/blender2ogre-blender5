@@ -3,7 +3,7 @@
 * License: [GNU LGPL](http://www.gnu.org/licenses/lgpl.html)
 * [Ogre forum thread](https://forums.ogre3d.org/viewtopic.php?f=8&t=61485)
 
-**This versions requires Blender 2.8+.** For Blender 2.7x: [use the 2.7x-support branch](https://github.com/OGRECave/blender2ogre/tree/2.7x-support)
+**This adaptation targets Blender 5.2.3 LTS on Windows x64.** [Current installation instructions](docs/INSTALLATION.md) · [Our fixes and improvements](#our-fixes-and-improvements). The original blender2ogre documentation and images are retained below. For this adaptation's verified feature/platform scope, see [known limits](docs/ROADMAP.md). Upstream supports Blender 2.8+. For Blender 2.7x: [use the 2.7x-support branch](https://github.com/OGRECave/blender2ogre/tree/2.7x-support)
 
 ## Index
  - [Installing](#installing)
@@ -32,6 +32,7 @@
     - [Mesh Previewer](#mesh-previewer)
  - [About](#about)
  - [Authors](#authors)
+ - [Our fixes and improvements](#our-fixes-and-improvements)
 
 ## Installing
 1. Copy the [io_ogre](io_ogre) folder into the [$BLENDER_DIR](https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html)`/scripts/addons` folder.
@@ -58,7 +59,7 @@ If you are upgrading from a previous version of blender2ogre and having problems
 ## Video Tutorials
 * [General Usage](http://www.youtube.com/watch?feature=player_embedded&v=3EpwEsB0_kk)
 * [Animations](http://www.youtube.com/watch?feature=player_embedded&v=5oVM0Lmeb68)
-* [Meshmoon: Video and text instructions on how to install and use blender2ogre addon](http://doc.meshmoon.com/index.html?page=from-blender-to-meshmoon-part-1)
+* The historical Meshmoon tutorial is no longer available. See [current installation instructions](docs/INSTALLATION.md).
 
 ## Exporting Meshes
 To export a blender model: `File Menu > Export > Ogre3D (.scene & .mesh)`.
@@ -313,3 +314,20 @@ So that there is no overlap with other developers or the overall roadmap.
 
 Additionally, the following companies have supported/sponsored the development efforts.
 * [Adminotech Ltd.](http://www.meshmoon.com/)
+
+## Our fixes and improvements
+
+- **Blender 5 support:** updated action-slot handling, named animation clips, operator initialization, registration/cleanup and installation.
+- **Faster imports:** replaced expensive XML DOM searches, transferred mesh arrays in bulk and reused shared static vertex buffers. The measured example improved from **39.0 to 7.7 seconds**, retaining all triangles, eight UV layers, normals and materials. Results vary by model and computer.
+- **Shared materials and textures:** added resource-pack discovery, an optional Resource Folder setting, shared material definitions and textures, imports, variables, inheritance, abstract templates and named overrides.
+- **Material appearance:** corrected base-texture selection, opaque/blended/masked materials, inherited alpha rejection, image alpha, quoted texture names and renamed Principled-node lookup.
+- **Texture export:** preserved packed/generated image paths and packing, and improved missing-image and optional ImageMagick diagnostics.
+- **Geometry:** corrected unshared geometry, missing/unused material slots, multiple UV layers, vertex colors/alpha, custom normals, material names and skin seams. Shape-animated exports preserve their shared geometry when needed.
+- **Skeletons and animation:** corrected bind matrices, bone orientation and IDs, mesh/rig bind-space conversion, clip timing, fractional frames, final samples and multiple action slots. Separate skeletons are used when shared bind spaces differ.
+- **Scene import/export:** preserved nested transforms, corrected camera/light directions and projection round trips, and added linear node-animation import.
+- **Export controls:** fixed Selected Only through hierarchies and merge collections; added Resource Prefix, Apply Modifiers and optional sparse node-key sampling.
+- **File protection:** isolated native conversion, preserved source XML, added import rollback and staged export, and restored selection, modifiers, rig visibility, action slots and timeline state after operations.
+- **Tools and diagnostics:** bundled the compatible Windows tools and license notices, repaired missing bundled/default paths, added process timeouts and configuration validation, and throttled excessive progress updates.
+- **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **73 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
+
+[Complete fixes and improvements](docs/FIXES.md) · [Version-by-version patch notes](CHANGELOG.md) · [Upstream issue audit](docs/UPSTREAM_ISSUES.md) · [Validation](docs/VALIDATION.md)

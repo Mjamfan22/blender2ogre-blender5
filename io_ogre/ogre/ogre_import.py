@@ -172,9 +172,10 @@ def xOpenFile(filename):
     logger.info("* Parsing file: %s ..." % filename)
     start = time.time()
 
-    xml_file = open(filename)
+    xml_file = open(filename, encoding='utf-8-sig')
     try:
-        xml_doc = minidom.parse(xml_file)
+        from .fast_xml import parse
+        xml_doc = parse(xml_file)
         output = xml_doc
     except Exception:
         logger.error("File %s is not valid XML!" % filename)
@@ -268,6 +269,9 @@ def xCollectVertexData(data):
 
 def xCollectMeshData(meshData, xmldoc, meshname, dirname):
     logger.info("* Collecting mesh data...")
+    from .fast_xml import Document, collect_mesh
+    if isinstance(xmldoc, Document):
+        return collect_mesh(meshData, xmldoc, GetValidBlenderName, config.get('IMPORT_NORMALS'))
     
     #global has_skeleton
     faceslist = []
@@ -390,7 +394,7 @@ def xCollectPoseData(meshData, xmldoc):
 
     animations = []
 
-    fps = bpy.context.scene.render.fps
+    fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
 
     for animation_tag in animations_tag[0].getElementsByTagName('animation'):
         name = animation_tag.getAttribute('name')
@@ -449,6 +453,9 @@ def xCollectPoseData(meshData, xmldoc):
     meshData['pose_animations'] = animations
 
 
+from .. import animation as anim_api
+
+
 def bCreatePoseAnimations(ob, meshData, subMeshIndex):
     if 'pose_animations' in meshData and len(meshData['pose_animations']) > 0:
         logger.info("+ Creating pose animations...")
@@ -472,32 +479,20 @@ def bCreatePoseAnimations(ob, meshData, subMeshIndex):
 
             fcurves = {}
 
-            # The way we are iterating over submeshes the action might already exist
-            if name in bpy.data.actions:
-                action = bpy.data.actions[name]
-                logger.debug("- Action: %s already in 'bpy.data.actions'" % name)
-
-                # Get the FCurves for each pose/shape key
-                for shape_key_name in shape_key_names:
-                    fcurves[shape_key_name] = action.fcurves.find(data_path=f'key_blocks["{shape_key_name}"].value')
-            else:
-                action = bpy.data.actions.new(name)
-                # action.use_fake_user = True   # Dont need this as we are adding them to the nla editor
-                shape_keys.animation_data.action = action
+            actions = meshData.setdefault('_pose_actions', {})
+            if name not in actions:
+                actions[name] = bpy.data.actions.new(name)
                 Report.shape_animations.append(name)
-
-                # Add action to NLA tracks
-                track = shape_keys.animation_data.nla_tracks.new()
-                track.name = name
-                track.mute = True
-                track.strips.new(name, 0, action)
-
-                # Create the FCurves for each pose/shape key
-                for shape_key_name in shape_key_names:
-                    fcurve = action.fcurves.new(data_path=f'key_blocks["{shape_key_name}"].value')
-                    fcurves[shape_key_name] = fcurve
-
-                logger.info("+ Created action: %s" % name)
+            action = actions[name]
+            for shape_key_name in shape_key_names:
+                data_path = 'key_blocks["' + bpy.utils.escape_identifier(shape_key_name) + '"].value'
+                fcurves[shape_key_name] = anim_api.new_fcurve(action, shape_keys, data_path)
+            slot = anim_api.action_slot(action, shape_keys)
+            track = shape_keys.animation_data.nla_tracks.new()
+            track.name = name
+            track.mute = True
+            strip = track.strips.new(name, 0, action)
+            strip.action_slot = slot
 
             for track in tracks:
                 keyframes = track[0]
@@ -526,13 +521,13 @@ def bCreatePoseAnimations(ob, meshData, subMeshIndex):
                         referenced_shape_keys.append(shape_key_name)
 
                         fcurve = fcurves[shape_key_name]
-                        fcurve.keyframe_points.insert(frame, influence)
+                        fcurve.keyframe_points.insert(frame, influence).interpolation = 'LINEAR'
 
                     # Set influence to 0 for shape keys not referenced in the poserefs
                     # Otherwise the animation will look bad
                     for shape_key_name in [item for item in shape_key_names if item not in referenced_shape_keys]:
                         fcurve = fcurves[shape_key_name]
-                        fcurve.keyframe_points.insert(frame, 0)
+                        fcurve.keyframe_points.insert(frame, 0).interpolation = 'LINEAR'
 
 
 def xGetSkeletonLink(xmldoc, folder):
@@ -543,6 +538,8 @@ def xGetSkeletonLink(xmldoc, folder):
         skeletonName = skeletonLink.getAttribute("name")
         skeletonFile = os.path.join(folder, skeletonName)
         # Check for existence of skeleton file
+        if not os.path.isfile(skeletonFile) and os.path.isfile(skeletonFile + '.xml'):
+            skeletonFile += '.xml'
         if not os.path.isfile(skeletonFile):
             logger.warning("Ogre skeleton missing: %s" % skeletonFile)
             Report.warnings.append("Cannot find linked skeleton file '%s'\nIt must be in the same directory as the mesh file." % skeletonName)
@@ -578,7 +575,7 @@ def xCollectBoneData(meshData, xDoc):
                         OGRE_Bone['position'] = [x, y, z]
                     if b.localName == 'rotation':
                         angle = float(b.getAttributeNode('angle').value)
-                        axis = b.childNodes[1]
+                        axis = xGetChild(b, 'axis')
                         axisx = float(axis.getAttributeNode('x').value)
                         axisy = float(axis.getAttributeNode('y').value)
                         axisz = float(axis.getAttributeNode('z').value)
@@ -593,18 +590,8 @@ def xCollectBoneData(meshData, xDoc):
                 Parent = str(boneparent.getAttributeNode('parent').value)
                 OGRE_Bones[Bone]['parent'] = Parent
 
-    # Update Ogre bones with list of children
-    calcBoneChildren(OGRE_Bones)
-
-    # Helper bones
-    calcHelperBones(OGRE_Bones)
-    calcZeroBones(OGRE_Bones)
-
-    # Update Ogre bones with head positions
-    calcBoneHeadPositions(OGRE_Bones)
-
-    # Update Ogre bones with rotation matrices
-    calcBoneRotations(OGRE_Bones)
+    from .skeleton_import import prepare_rest
+    prepare_rest(meshData)
 
     return OGRE_Bones
 
@@ -837,7 +824,7 @@ def xCollectAnimations(meshData, xDoc):
 
 
 def xReadAnimation(action, tracks):
-    fps = bpy.context.scene.render.fps
+    fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
     for track in tracks:
         if track.nodeType != 1:
             continue
@@ -866,82 +853,19 @@ def xReadAnimation(action, tracks):
                     z = axis.getAttribute('z')
                     # skip if axis contains #INF or #IND
                     if '#' not in x and '#' not in y and '#' not in z:
-                        quat = quaternionFromAngleAxis(float(angle), float(z), float(x), float(y))
+                        quat = quaternionFromAngleAxis(float(angle), float(x), float(y), float(z))
                         trackData[1].append([frame, quat])
                 elif key.tagName == 'scale':
                     x = float(key.getAttribute('x'))
                     y = float(key.getAttribute('y'))
                     z = float(key.getAttribute('z'))
-                    trackData[2].append([frame, (-x, z, y)])
+                    trackData[2].append([frame, (x, y, z)])
 
 
 def bCreateAnimations(meshData):
-    path_id = ['location', 'rotation_quaternion', 'scale']
-
-    if 'animations' in meshData:
-        logger.info("+ Creating animations...")
-
-        rig = meshData['rig']
-        rig.animation_data_create()
-        animdata = rig.animation_data
-
-        # calculate transformation matrices for translation
-        mat = {}
-        fix1 = Matrix([(1, 0, 0), (0, 0, 1), (0, -1, 0)])
-        fix2 = Matrix([(0, 1, 0), (0, 0, 1), (1, 0, 0)])
-        for bone in rig.pose.bones:
-            if bone.parent:
-            	mat[bone.name] = fix2 @ bone.parent.matrix.to_3x3().transposed() @ bone.matrix.to_3x3()
-            else:
-            	mat[bone.name] = fix1 @ bone.matrix.to_3x3()
-        
-        for name in sorted(meshData['animations'].keys(), reverse=True):
-            action = bpy.data.actions.new(name)
-            Report.armature_animations.append(name)
-            
-            # action.use_fake_user = True   # Dont need this as we are adding them to the nla editor
-            logger.info("+ Created action: %s" % name)
-
-            # Iterate target bones
-            for target in meshData['animations'][name]:
-                data = meshData['animations'][name][target]
-                bone = rig.pose.bones[target]
-                if not bone:
-                    continue  # error
-                bone.rotation_mode = 'QUATERNION'
-
-                # Fix rotation inversions
-                for i in range(1, len(data[1])):
-                    a = data[1][i-1][1]
-                    b = data[1][i][1]
-                    dot = a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]
-                    if dot < -0.8:
-                        #print('fix inversion', name, target, i)
-                        data[1][i][1] = (-b[0], -b[1], -b[2], -b[3])
-
-                # Fix translation keys - rotate by inverse rest orientation
-                m = mat[target].transposed()
-                for i in range(0, len(data[0])):
-                    v = Vector(data[0][i][1])
-                    data[0][i][1] = m @ v
-
-                # Create fcurves
-                for i in range(3):
-                    if data[i]:
-                        path = bone.path_from_id(path_id[i])
-                        for channel in range(len(data[i][0][1])):
-                            curve = action.fcurves.new(path, index=channel, action_group=bone.name)
-                            for key in data[i]:
-                                curve.keyframe_points.insert(key[0], key[1][channel])
-
-            # Add action to NLA track
-            track = animdata.nla_tracks.new()
-            track.name = name
-            track.mute = True
-            track.strips.new(name, 0, action)
-
-
-## =========================================================================================== ##
+    if meshData.get('animations'):
+        from .skeleton_import import create_animations
+        create_animations(meshData)
 
 
 def bCreateMesh(meshData, folder, name, filepath):
@@ -973,7 +897,9 @@ def bCreateMesh(meshData, folder, name, filepath):
         subOb.select_set(True)
 
     # TODO: Try to merge everything into the armature object
-    if config.get('MERGE_SUBMESHES') is True:
+    if not subObjs:
+        raise ValueError('The mesh contains no importable submeshes')
+    if config.get('MERGE_SUBMESHES') is True and len(subObjs) > 1:
         bpy.ops.object.join()
         ob = bpy.context.view_layer.objects.active
         ob.name = name
@@ -989,148 +915,9 @@ def bCreateMesh(meshData, folder, name, filepath):
 
 
 def bCreateSkeleton(meshData, name):
-    if 'skeleton' not in meshData:
-        return
-    bonesData = meshData['skeleton']
-    
-    logger.info("+ Creating skeleton: %s" % name)
+    from .skeleton_import import create_skeleton
+    return create_skeleton(meshData, name)
 
-    # Create Armature
-    amt = bpy.data.armatures.new(name)
-    rig = bpy.data.objects.new(name, amt)
-    meshData['rig'] = rig
-    #rig.location = origin
-    rig.show_in_front = True
-    #amt.show_names = True
-    # Link object to scene
-    scn = bpy.context.scene
-    scn.collection.objects.link(rig)
-    bpy.context.view_layer.objects.active = rig
-    bpy.context.view_layer.update()
-    
-    # Chose default length of bones with no children
-    averageBone = 0
-    for b in bonesData.values():
-        childLength = b['position'][0]
-        averageBone += childLength
-    averageBone /= len(bonesData)
-    if averageBone == 0:
-        averageBone = 0.2
-    logger.debug("Default bone length: %s" % averageBone)
-
-    bpy.ops.object.mode_set(mode='EDIT')
-    for bone in bonesData.keys():
-        boneData = bonesData[bone]
-        boneName = boneData['name']
-
-        children = boneData['children']
-        boneObj = amt.edit_bones.new(boneName)
-
-        # Store Ogre bone id to match when exporting
-        if 'id' in boneData:
-            boneObj['OGREID'] = boneData['id']
-            logger.debug("BoneID: %s, BoneName: %s" % (boneData['id'], boneName))
-
-        #boneObj.head = boneData['posHAS']
-        #headPos = boneData['posHAS']
-        headPos = boneData['posHAS']
-        tailVector = 0
-        if len(children) > 0:
-            for child in children:
-                tailVector = max(tailVector, bonesData[child]['position'][0])
-        if tailVector < MIN_BONE_LENGTH:
-            tailVector = averageBone
-
-        #boneObj.head = Vector([headPos[0], -headPos[2], headPos[1]])
-        #boneObj.tail = Vector([headPos[0], -headPos[2], headPos[1] + tailVector])
-
-        #print("bCreateSkeleton: bone=%s, boneObj.head=%s" % (bone, boneObj.head))
-        #print("bCreateSkeleton: bone=%s, boneObj.tail=%s" % (bone, boneObj.tail))
-        #boneObj.matrix =
-        rotmat = boneData['rotmatAS']
-        #print(rotmat[1].to_tuple())
-        #boneObj.matrix = Matrix(rotmat[1],rotmat[0],rotmat[2])
-        if bpy.app.version <= (2, 62, 0):
-            r0 = [rotmat[0].x] + [rotmat[0].y] + [rotmat[0].z]
-            r1 = [rotmat[1].x] + [rotmat[1].y] + [rotmat[1].z]
-            r2 = [rotmat[2].x] + [rotmat[2].y] + [rotmat[2].z]
-            boneRotMatrix = Matrix((r1, r0, r2))
-        elif bpy.app.version > (2, 62, 0):
-            # this is fugly way of flipping matrix
-            r0 = [rotmat.col[0].x] + [rotmat.col[0].y] + [rotmat.col[0].z]
-            r1 = [rotmat.col[1].x] + [rotmat.col[1].y] + [rotmat.col[1].z]
-            r2 = [rotmat.col[2].x] + [rotmat.col[2].y] + [rotmat.col[2].z]
-            tmpR = Matrix((r1, r0, r2))
-            boneRotMatrix = Matrix((tmpR.col[0], tmpR.col[1], tmpR.col[2]))
-
-        #pos = Vector([headPos[0],-headPos[2],headPos[1]])
-        #axis, roll = mat3_to_vec_roll(boneRotMatrix.to_3x3())
-
-        #boneObj.head = pos
-        #boneObj.tail = pos + axis
-        #boneObj.roll = roll
-
-        #print("bCreateSkeleton: bone=%s, newrotmat=%s" % (bone, Matrix((r1,r0,r2))))
-        #print(r1)
-        #mtx = Matrix.to_3x3()Translation(boneObj.head) # Matrix((r1,r0,r2))
-        #boneObj.transform(Matrix((r1,r0,r2)))
-        #print("bCreateSkeleton: bone=%s, matrix_before=%s" % (bone, boneObj.matrix))
-        #boneObj.use_local_location = False
-        #boneObj.transform(Matrix((r1,r0,r2)) , False, False)
-        #print("bCreateSkeleton: bone=%s, matrix_after=%s" % (bone, boneObj.matrix))
-        boneObj.head = Vector([0, 0, 0])
-        #boneObj.tail = Vector([0,0,tailVector])
-        boneObj.tail = Vector([0, tailVector, 0])
-        #matx = Matrix.Translation(Vector([headPos[0],-headPos[2],headPos[1]]))
-
-        boneObj.transform(boneRotMatrix)
-        #bpy.context.view_layer.update()
-        boneObj.translate(Vector([headPos[0], -headPos[2], headPos[1]]))
-        #bpy.context.view_layer.update()
-        #boneObj.translate(Vector([headPos[0],-headPos[2],headPos[1]]))
-        #boneObj.head = Vector([headPos[0],-headPos[2],headPos[1]])
-        #boneObj.tail = Vector([headPos[0],-headPos[2],headPos[1]]) + (Vector([0,0, tailVector])  * Matrix((r1,r0,r2)))
-
-        #amt.bones[bone] = boneObj
-        #amt.update_tag(refresh)
-
-    # Only after all bones are created we can link parents
-    for bone in bonesData.keys():
-        boneData = bonesData[bone]
-        parent = None
-        if 'parent' in boneData.keys():
-            parent = boneData['parent']
-            # get bone obj
-            boneData = bonesData[bone]
-            boneName = boneData['name']
-            boneObj = amt.edit_bones[boneName]
-            boneObj.parent = amt.edit_bones[parent]
-
-    # Need to refresh armature before removing bones
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.mode_set(mode='EDIT')
-
-    # Delete helper/zero bones
-    for bone in amt.bones.keys():
-        # print("keys of bone=%s" % bonesData[bone].keys())
-        if 'flag' in bonesData[bone].keys():
-            # print ("deleting bone=%s" % bone)
-            bpy.context.object.data.edit_bones.remove(amt.edit_bones[bone])
-
-    bpy.ops.object.mode_set(mode='OBJECT')
-    #for (bname, pname, vector) in boneTable:
-    #    bone = amt.edit_bones.new(bname)
-    #    if pname:
-    #        parent = amt.edit_bones[pname]
-    #        bone.parent = parent
-    #        bone.head = parent.tail
-    #        bone.use_connect = False
-    #        (trans, rot, scale) = parent.matrix.decompose()
-    #    else:
-    #        bone.head = (0,0,0)
-    #        rot = Matrix.Translation((0,0,0))    # identity matrix
-    #    bone.tail = rot * Vector(vector) + bone.head
-    #bpy.ops.object.mode_set(mode='OBJECT')
 
 def bMergeVertices(subMesh):
     # This sort of works, but leaves all uv seams as sharp.
@@ -1157,9 +944,41 @@ def bMergeVertices(subMesh):
             face[i] = map[face[i]]
 
 
+def append_material(ob, meshData, subMeshData):
+    """Reuse one material per source name throughout a single import."""
+    name = subMeshData['material']
+    key = subMeshData.get('materialOrig',name)
+    cache = meshData.setdefault('_blender_materials',{})
+    if key not in cache:
+        if key in meshData['materials']:
+            from .material_import import create_material
+            cache[key] = create_material(name,meshData['materials'][key])
+            if name not in Report.materials:
+                Report.materials.append(name)
+        else:
+            logger.warning('Definition of material: "%s" not found!',name)
+            Report.warnings.append('Definition of material: "%s" not found!' % name)
+            cache[key] = bpy.data.materials.new(name=name)
+    material = cache[key]
+    index = ob.data.materials.find(material.name)
+    if index < 0:
+        index = len(ob.data.materials)
+        ob.data.materials.append(material)
+    return index
+
+
 def bCreateSubMeshes(meshData, meshName):
+    import numpy as np
     allObjects = []
     submeshes = meshData['submeshes']
+    # Static submeshes with shared geometry can use one vertex buffer directly.
+    # Rig and morph imports retain their established topology/animation path.
+    shared_merge = (config.get('MERGE_SUBMESHES') and len(submeshes)>1 and
+        'sharedgeometry' in meshData and all('geometry' not in sub for sub in submeshes) and
+        not any(key in meshData for key in ('boneIDs','skeleton','armature','poses')))
+    original_submeshes = submeshes
+    if shared_merge:
+        submeshes = [dict(submeshes[0],faces=[face for sub in submeshes for face in sub['faces']])]
     scene = bpy.context.scene
     layer = bpy.context.view_layer
 
@@ -1168,8 +987,9 @@ def bCreateSubMeshes(meshData, meshName):
         subMeshName = subMeshData['material']
 
         # Create mesh and object
-        me = bpy.data.meshes.new(subMeshName)
-        ob = bpy.data.objects.new(subMeshName, me)
+        object_name = meshName if shared_merge else subMeshName
+        me = bpy.data.meshes.new(object_name)
+        ob = bpy.data.objects.new(object_name, me)
 
         # Link object to scene
         scene.collection.objects.link(ob)
@@ -1197,93 +1017,27 @@ def bCreateSubMeshes(meshData, meshName):
         me.loops.add(FaceLength * 3)
         me.polygons.add(FaceLength)
 
-        me.vertices.foreach_set("co", unpack_list(verts))
-
-        if hasNormals:
-            me.vertices.foreach_set("normal", unpack_list(normals))
-
-        me.polygons.foreach_set("loop_start", [i for i in range(0, FaceLength * 3, 3)])
-        me.polygons.foreach_set("loop_total", [3] * (FaceLength))
-        me.loops.foreach_set("vertex_index", unpack_list(faces))
+        me.vertices.foreach_set('co',np.asarray(verts,dtype='f').ravel())
+        loop_vertices = np.asarray(faces,dtype='i').ravel()
+        me.polygons.foreach_set('loop_start',np.arange(0,FaceLength*3,3,dtype='i'))
+        me.polygons.foreach_set('loop_total',np.full(FaceLength,3,dtype='i'))
+        me.loops.foreach_set('vertex_index',loop_vertices)
 
         hasTexture = False
         # Material for the submesh
         # Create image texture from image.
-        if subMeshName in meshData['materials']:
-            matInfo = meshData['materials'][subMeshName]	# material data
-            if subMeshName not in Report.materials:
-                Report.materials.append(subMeshName)
-
-            # Create shadeless material and MTex
-            mat = None
-            if subMeshName not in bpy.data.materials:
-                mat = bpy.data.materials.new(subMeshName)
-            else:
-                mat = bpy.data.materials.get(subMeshName)
-
-            mat.use_nodes = True
-
-            output = mat.node_tree.nodes["Material Output"]
-            output.location = 0, 0
-            
-            bsdf = mat.node_tree.nodes["Principled BSDF"]
-            bsdf.location = -300, 0
-            
-            if 'texture' in matInfo:
-                texturePath = matInfo['texture']
-                if texturePath:
-                    hasTexture = True
-                    Report.textures.append( matInfo['imageNameOnly'] )
-                    
-                    # Try to find among already loaded images
-                    image = None
-                    for lImage in bpy.data.images:
-                        if lImage.name == matInfo['imageNameOnly']:
-                            image = lImage
-                            break
-                    if not image:
-                        image = bpy.data.textures.new(matInfo['imageNameOnly'], type = 'IMAGE')
-                        image = bpy.data.images.load(texturePath)
-
-                    texImage = mat.node_tree.nodes.new(type= "ShaderNodeTexImage")
-                    texImage.location = -600, 0
-                    texImage.image = image
-                    inp = mat.node_tree.nodes['Principled BSDF'].inputs['Base Color']
-                    outp = texImage.outputs['Color']
-                    mat.node_tree.links.new(inp, outp)
-
-                    mapping = mat.node_tree.nodes.new(type="ShaderNodeMapping")
-                    mapping.location = -800, 0
-                    inp = texImage.inputs['Vector']
-                    outp = mat.node_tree.nodes['Mapping'].outputs['Vector']
-                    mat.node_tree.links.new(inp, outp)
-                    
-                    texcoord = mat.node_tree.nodes.new(type="ShaderNodeTexCoord")
-                    texcoord.location = -1000, 0
-                    inp = mat.node_tree.nodes['Mapping'].inputs['Vector']
-                    outp = mat.node_tree.nodes['Texture Coordinate'].outputs['UV']
-                    mat.node_tree.links.new(inp, outp)
-
-            # Add material to object
-            ob.data.materials.append(mat)
-            #logger.debug(me.uv_textures[0].data.values()[0].image)
+        if shared_merge:
+            slots = [np.full(len(sub['faces']),append_material(ob,meshData,sub),dtype='i') for sub in original_submeshes]
+            me.polygons.foreach_set('material_index',np.concatenate(slots))
         else:
-            logger.warning("Definition of material: \"%s\" not found!" % subMeshName)
-            Report.warnings.append("Definition of material: \"%s\" not found!" % subMeshName)
-            # create default material if it could not be imported to preserve submesh material reference
-            mat = bpy.data.materials.new(name=subMeshName)
-            ob.data.materials.append(mat)
+            append_material(ob,meshData,subMeshData)
 
         # Texture coordinates
         if 'texcoordsets' in geometry and 'uvsets' in geometry:
-            uvsets = geometry['uvsets']
+            uvsets = np.asarray(geometry['uvsets'],dtype='f')
             for j in range(geometry['texcoordsets']):
                 uvData = me.uv_layers.new(name='UVLayer'+str(j)).data
-                loopIndex = 0
-                for face in faces:
-                    for v in face:
-                        uvData[loopIndex].uv = uvsets[v][j]
-                        loopIndex += 1
+                uvData.foreach_set('uv',uvsets[loop_vertices,j,:].ravel())
 
         # Vertex colors
         if 'vertexcolors' in geometry and len(geometry['vertexcolors']) > 0:
@@ -1293,12 +1047,8 @@ def bCreateSubMeshes(meshData, meshName):
             else:
                 colourData = me.vertex_colors.new(name='Color').data
 
-            vcolors = geometry['vertexcolors']
-            loopIndex = 0
-            for face in faces:
-                for v in face:
-                    colourData[loopIndex].color = vcolors[v]
-                    loopIndex += 1
+            vcolors = np.asarray(geometry['vertexcolors'],dtype='f')
+            colourData.foreach_set('color',vcolors[loop_vertices].ravel())
 
         # Bone assignments:
         if 'boneIDs' in meshData:
@@ -1317,7 +1067,7 @@ def bCreateSubMeshes(meshData, meshName):
             Report.armatures.append(skeletonName)
 
             mod = ob.modifiers.new('OgreSkeleton', 'ARMATURE')
-            mod.object = bpy.data.objects[skeletonName]  # gets the rig object
+            mod.object = meshData['rig']  # gets the rig object
             mod.use_bone_envelopes = False
             mod.use_vertex_groups = True
 
@@ -1358,10 +1108,7 @@ def bCreateSubMeshes(meshData, meshName):
         Report.orig_vertices = len( me.vertices )
         Report.faces += len( me.polygons )
 
-        bpy.ops.object.editmode_toggle()
-        #bpy.ops.mesh.remove_doubles(threshold=0.001)
-        bpy.ops.mesh.tris_convert_to_quads()
-        bpy.ops.object.editmode_toggle()
+        # Preserve source triangles, normals, UV seams, and shape topology.
 
         Report.triangles += len( me.polygons )
         Report.vertices += len( me.vertices )
@@ -1403,256 +1150,25 @@ def getBoneNameMapFromArmature(arm):
 
 
 def load_scene(filepath):
-    logger.info("* Loading scene from: %s" % str(filepath))
-
-    folder = os.path.dirname(filepath)
-
-    xDocSceneData = xOpenFile(filepath)
-
-    scene = xDocSceneData.getElementsByTagName('scene')
-    if len(scene) == 0:
-        logger.error("No scene found!")
-        Report.errors.append("No scene found!")
-        return
-
-    import_collection = bpy.data.collections.new("OgreImport")
-    bpy.context.scene.collection.children.link(import_collection)
-
-    environment = scene[0].getElementsByTagName('environment')
-    if len(environment) > 0:
-        logger.info("+ Environment")
-
-        backgnd_col = environment[0].getElementsByTagName('colourBackground')[0]
-        backgnd_col_r = float(backgnd_col.getAttribute('r'))
-        backgnd_col_g = float(backgnd_col.getAttribute('g'))
-        backgnd_col_b = float(backgnd_col.getAttribute('b'))
-        logger.info(f"  - Background Color: r={backgnd_col_r}, g={backgnd_col_g}, b={backgnd_col_b}")
-
-        world = bpy.context.scene.world
-        world.color = Vector((backgnd_col_r, backgnd_col_g, backgnd_col_b))
-
-        if len(environment[0].getElementsByTagName('fog')) > 0:
-            fog = environment[0].getElementsByTagName('fog')[0]
-            fog_falloff = fog.getAttribute('mode')
-            linear_start = float(fog.getAttribute('linearStart'))
-            linear_end = float(fog.getAttribute('linearEnd'))
-            exp_density = float(fog.getAttribute('expDensity'))
-            logger.info(f"  - Fog: falloff={fog_falloff}, linear_start={linear_start}, linear_end={linear_end}, exp_density={exp_density}")
-
-            world.mist_settings.use_mist = True
-            world.mist_settings.intensity = exp_density
-            world.mist_settings.start = linear_start
-            world.mist_settings.depth = linear_end - linear_start
-
-            falloff_types = {'linear': 'LINEAR', 'exp': 'QUADRATIC', 'exp2': 'INVERSE_QUADRATIC'}
-            world.mist_settings.falloff = falloff_types[fog_falloff]
-
-    nodes = scene[0].getElementsByTagName('nodes')
-    if len(nodes) > 0:
-        for node in nodes[0].getElementsByTagName('node'):
-            # Extract and print node name
-            node_name = node.getAttribute('name')
-            logger.info(f"+ Node: {node_name}")
-
-            # Position
-            position = node.getElementsByTagName('position')[0]
-            pos_x = float(position.getAttribute('x'))
-            pos_y = float(position.getAttribute('y'))
-            pos_z = float(position.getAttribute('z'))
-            location = Vector((pos_x, -pos_z, pos_y))
-            logger.info(f"  - Position: x={pos_x}, y={pos_y}, z={pos_z}")
-
-            # Rotation
-            rotation = node.getElementsByTagName('rotation')[0]
-            rot_qw = float(rotation.getAttribute('qw'))
-            rot_qx = float(rotation.getAttribute('qx'))
-            rot_qy = float(rotation.getAttribute('qy'))
-            rot_qz = float(rotation.getAttribute('qz'))
-            quaternion = Quaternion((rot_qw, rot_qx, -rot_qz, rot_qy))
-            euler = quaternion.to_euler()
-            logger.info(f"  - Rotation: qw={rot_qw}, qx={rot_qx}, qy={rot_qy}, qz={rot_qz}")
-
-            # Scale
-            scale = node.getElementsByTagName('scale')[0]
-            scale_x = float(scale.getAttribute('x'))
-            scale_y = float(scale.getAttribute('y'))
-            scale_z = float(scale.getAttribute('z'))
-            scale_vector = Vector((scale_x, scale_z, scale_y))
-            logger.info(f"  - Scale: x={scale_x}, y={scale_y}, z={scale_z}")
-
-            # Entity (if any)
-            entities = node.getElementsByTagName('entity')
-            if entities:
-                entity = entities[0]
-                meshFile = entity.getAttribute('meshFile')
-                entity_name = entity.getAttribute('name')
-                logger.info(f"  * Entity: {entity_name}, Mesh File: {meshFile}")
-
-                mesh_path = os.path.join(folder, meshFile)
-                load_mesh(mesh_path)
-
-                entity = bpy.context.active_object
-                entity.name = node_name
-                entity.location = location
-                entity.rotation_euler = euler
-                entity.scale = scale_vector
-                # Unlink from all current collections
-                for col in entity.users_collection:
-                    col.objects.unlink(entity)
-                import_collection.objects.link(entity)
-
-            # Light (if any)
-            lights = node.getElementsByTagName('light')
-            if lights:
-                light = lights[0]
-                light_name = light.getAttribute('name')
-                light_type = light.getAttribute('type')
-                powerScale = float(light.getAttribute('powerScale'))
-                logger.info(f"  * Light: {light_name}, Type: {light_type}, Power Scale: {powerScale}")
-
-                diff_color = light.getElementsByTagName('colourDiffuse')
-                diff_color_r = float(diff_color[0].getAttribute('r'))
-                diff_color_g = float(diff_color[0].getAttribute('g'))
-                diff_color_b = float(diff_color[0].getAttribute('b'))
-                diffuse_color = Vector((diff_color_r, diff_color_g, diff_color_b))
-                diffuse_factor = 1              # Impossible to obtain from the data
-                logger.info(f"  * Light Diffuse: (color: r={diff_color_r}, g={diff_color_g}, b={diff_color_b}), factor: {diffuse_factor}")
-
-                spec_color = light.getElementsByTagName('colourSpecular')
-                spec_color_r = float(spec_color[0].getAttribute('r'))
-                spec_color_g = float(spec_color[0].getAttribute('g'))
-                spec_color_b = float(spec_color[0].getAttribute('b'))
-                specular_color = Vector((spec_color_r, spec_color_g, spec_color_b))
-                if (bpy.app.version >= (2, 93, 0)):
-                    specular_factor = 1         # Impossible to obtain from the data
-                else:
-                    if diff_color_r > 0.001:
-                        specular_factor = spec_color_r / diff_color_r
-                    elif diff_color_g > 0.001:
-                        specular_factor = spec_color_g / diff_color_g
-                    elif diff_color_b > 0.001:
-                        specular_factor = spec_color_b / diff_color_b
-                    else:
-                        specular_factor = 1     # Impossible to know
-                logger.info(f"  * Light Specular (color: r={spec_color_r}, g={spec_color_g}, b={spec_color_b}), factor: {specular_factor}")
-
-                light_attn = light.getElementsByTagName('lightAttenuation')
-                light_attn_constant = float(light_attn[0].getAttribute('constant'))
-                light_attn_linear = float(light_attn[0].getAttribute('linear'))
-                light_attn_quadratic = float(light_attn[0].getAttribute('quadratic'))
-                light_attn_range = float(light_attn[0].getAttribute('range'))
-                logger.info(f"  * Light Attenuation -- Constant: {light_attn_constant}, Linear: {light_attn_linear}, Range: {light_attn_range}")
-
-                light_types = {'point': 'POINT', 'directional': 'SUN', 'spot': 'SPOT', 'rect': 'RECTANGLE'}
-                bpy.ops.object.light_add(type=light_types[light_type], location=location, rotation=euler)
-                light = bpy.context.active_object
-
-                # Common attributes to all lights: color, energy, diffuse, specular, volume
-                light.name = light_name
-
-                # Unlink from all current collections
-                for col in light.users_collection:
-                    col.objects.unlink(light)
-                import_collection.objects.link(light)
-
-                light.data.energy = powerScale
-                if (bpy.app.version >= (2, 93, 0)):
-                    light.data.color = diffuse_color / diffuse_factor
-                    light.data.diffuse_factor = diffuse_factor
-                else:
-                    light.data.color = diffuse_color
-                light.data.specular_factor = specular_factor
-
-                Report.lights.append( light_name )
-
-                # Point light sources give off light equally in all directions, so require only position not direction.
-                #if light_type == 'point':
-                #    light.data.use_custom_distance = True
-                #    light.data.cutoff_distance = light_attn_range
-
-                #Directional lights simulate parallel light beams from a distant source, hence have direction but no position.
-                #if light_type == 'directional':
-                #    light.data.angle = 0.0615403
-                #    pass
-
-                #Spotlights simulate a cone of light from a source so require position and direction, plus extra values for falloff.
-                #if light_type == 'spot':
-                #    light.data.use_custom_distance = True
-                #    light.data.cutoff_distance = light_attn_range
-                #    light.data.spot_size = 0.785398
-                #    light.data.spot_blend = 0.15
-                    #a.setAttribute('inner', str( ob.data.spot_size * (1.0 - ob.data.spot_blend)))
-                    #a.setAttribute('outer', str(ob.data.spot_size))
-
-                #A rectangular area light, requires position, direction, width and height.
-                #if light_type == 'rect':
-                #    light.data.shape = 'RECTANGLE'
-                #    light.data.size = 0.25
-                #    light.data.size_y = 0.25
-
-            # Camera (if any)
-            cameras = node.getElementsByTagName('camera')
-            if cameras:
-                camera = cameras[0]
-                camera_name = camera.getAttribute('name')
-                fov = float(camera.getAttribute('fov'))
-                projection_type = camera.getAttribute('projectionType')
-                clipping = camera.getElementsByTagName('clipping')[0]
-                clipping_near = float(clipping.getAttribute('near'))
-                clipping_far = float(clipping.getAttribute('far'))
-                logger.info(f"  * Camera: {camera_name}, FOV: {fov}, Projection Type: {projection_type}, Clipping: (near: {clipping_near}, far: {clipping_far})")
-
-                bpy.ops.object.camera_add(location=location, rotation=euler)
-
-                camera = bpy.context.active_object
-                camera.name = camera_name
-
-                # Unlink from all current collections
-                for col in camera.users_collection:
-                    col.objects.unlink(camera)
-                import_collection.objects.link(camera)
-
-                Report.cameras.append( camera_name )
-
-                #aspx = bpy.context.scene.render.pixel_aspect_x
-                #aspy = bpy.context.scene.render.pixel_aspect_y
-                #sx = bpy.context.scene.render.resolution_x
-                #sy = bpy.context.scene.render.resolution_y
-                #if ob.data.type == "PERSP":
-                #    fovY = 0.0
-                #    if (sx*aspx > sy*aspy):
-                #        fovY = 2 * math.atan(sy * aspy * 16.0 / (ob.data.lens * sx * aspx))
-                #    else:
-                #        fovY = 2 * math.atan(16.0 / ob.data.lens)
-                #    # fov in radians - like OgreMax - requested by cyrfer
-                #    fov = math.radians( fovY * 180.0 / math.pi )
-                #    c.setAttribute('projectionType', "perspective")
-                #    c.setAttribute('fov', '%6f' % fov)
-                #else: # ob.data.type == "ORTHO":
-                #    c.setAttribute('projectionType', "orthographic")
-                #    c.setAttribute('orthoScale', '%6f' % ob.data.ortho_scale)
-
-                # Perspective
-                camera_types = {'perspective': 'PERSP', 'orthographic': 'ORTHO'}
-                camera.data.type = camera_types[projection_type]
-
-                # Field of View
-                camera.data.lens_unit = 'FOV'
-                camera.data.angle = fov * 2
-
-                # Clipping
-                camera.data.clip_start = clipping_near
-                camera.data.clip_end = clipping_far
+    from .scene_import import load_scene as read_scene
+    return read_scene(filepath)
 
 
 def load_mesh(filepath):
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix='blender2ogre_import_') as workdir:
+        return _load_mesh(filepath, workdir)
+
+
+def _load_mesh(filepath, workdir):
     logger.info("* Loading mesh from: %s" % str(filepath))
 
     pathMeshXml = None
     # Get the mesh as .xml file
     if filepath.lower().endswith(".mesh"):
-        if mesh_convert(filepath):
-            pathMeshXml = filepath + ".xml"
+        pathMeshXml = os.path.join(workdir, os.path.basename(filepath) + ".xml")
+        if mesh_convert(filepath, pathMeshXml):
+            pass
         else:
             logger.error("Failed to convert .mesh file %s to .xml" % filepath)
             Report.errors.append("Failed to convert .mesh file to .xml")
@@ -1686,6 +1202,11 @@ def load_mesh(filepath):
     xDocMeshData = xOpenFile(pathMeshXml)
 
     meshData = {}
+    if xDocMeshData == "None":
+        return {'CANCELLED'}
+    if xDocMeshData.documentElement.tagName != "mesh":
+        Report.errors.append("The selected XML document is not an OGRE mesh")
+        return {'CANCELLED'}
     if xDocMeshData != "None":
         # Skeleton data
         # Get the mesh as .xml file
@@ -1707,21 +1228,22 @@ def load_mesh(filepath):
 
         # There is valid skeleton link and existing file
         elif skeletonFile != "None":
-            if mesh_convert(skeletonFile):
-                skeletonFileXml = skeletonFile + ".xml"
+            skeletonFileXml = skeletonFile if skeletonFile.lower().endswith(".xml") else os.path.join(workdir, os.path.basename(skeletonFile) + ".xml")
+            if skeletonFileXml == skeletonFile or mesh_convert(skeletonFile, skeletonFileXml):
 
                 # Parse .xml skeleton file
                 xDocSkeletonData = xOpenFile(skeletonFileXml)
                 if xDocSkeletonData != "None":
                     xCollectBoneData(meshData, xDocSkeletonData)
-                    meshData['skeletonName'] = os.path.basename(skeletonFile[:-9])
+                    meshData['skeletonName'] = os.path.basename(skeletonFile).split('.skeleton')[0]
 
                     # Parse animations
                     if config.get('IMPORT_ANIMATIONS') is True:
                         fps = xAnalyseFPS(xDocSkeletonData)
                         if(fps and (config.get('ROUND_FRAMES') is True)):
                             logger.info(" * Setting FPS to %s" % fps)
-                            bpy.context.scene.render.fps = int(fps)
+                            bpy.context.scene.render.fps = round(fps)
+                            bpy.context.scene.render.fps_base = round(fps) / fps
                         xCollectAnimations(meshData, xDocSkeletonData)
 
             else:
@@ -1730,20 +1252,20 @@ def load_mesh(filepath):
 
         # Collect mesh data
         xCollectMeshData(meshData, xDocMeshData, onlyName, folder)
+        from .validation import validate_mesh
+        validate_mesh(meshData)
         MaterialParser.xCollectMaterialData(meshData, onlyName, folder)
         
         if config.get('IMPORT_SHAPEKEYS') is True:
             xCollectPoseData(meshData, xDocMeshData)
 
+        # Geometry and animation channels are plain arrays now. Release the
+        # large XML tree before allocating Blender's mesh buffers.
+        xDocMeshData.unlink()
+
         # After collecting is done, start creating stuff#
         # Create skeleton (if any) and mesh from parsed data
         bCreateMesh(meshData, folder, onlyName, pathMeshXml)
         bCreateAnimations(meshData)
-
-        if config.get('IMPORT_XML_DELETE') is True:
-            # Cleanup by deleting the XML file we created
-            os.unlink("%s" % pathMeshXml)
-            if 'skeleton' in meshData:
-                os.unlink("%s" % skeletonFileXml)
 
     return {'FINISHED'}

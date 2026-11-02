@@ -1,0 +1,27 @@
+{
+  "module_root": "<local>/addons",
+  "blender": "5.2.3 LTS",
+  "output": "<local>/ffa7192e",
+  "tests": [
+    {
+      "test": "shared_static_geometry_keeps_bulk_corner_attributes",
+      "passed": true
+    },
+    {
+      "test": "keep_submeshes_separate_still_works",
+      "passed": true
+    },
+    {
+      "test": "skeletal_shared_mesh_keeps_weights_and_rig",
+      "passed": true
+    },
+    {
+      "test": "multiple_vertex_buffers_and_declared_counts",
+      "passed": true
+    },
+    {
+      "test": "full_bakugan_import_matches_previous_release",
+      "passed": true
+    }
+  ]
+}

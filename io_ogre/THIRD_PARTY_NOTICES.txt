@@ -1,0 +1,34 @@
+blender2ogre / io_ogre
+====================
+Source: https://github.com/OGRECave/blender2ogre
+Baseline: 0d094a40a589752802a9f8823cf08cd8acd6f8fe
+Copyright (C) 2010 Brett Hartshorn and the upstream contributors.
+GNU Lesser General Public License, version 2.1 or later.
+Full license: LICENSE.txt. Original credits: UPSTREAM_README.md.
+
+This is a modified Blender 5.2 adaptation (version in README.md), not an
+official OGRECave release. Original notices and module identity are retained.
+The complete modified Python sources are included in this package.
+
+OGRE command line tools
+=======================
+The unmodified Windows binaries in tools/windows are copied from the user's
+existing OGRE 13.3.2 tools distribution. OgreXMLConverter reports:
+    OgreXMLConverter Tsathoggua (13.3.2)
+Files: OgreXMLConverter.exe, OgreMeshUpgrader.exe, OgreMain.dll,
+       OgreMeshLodGenerator.dll
+Source: https://github.com/OGRECave/ogre/tree/v13.3.2
+MIT License; copyright (c) 2000-2013 Torus Knot Software Ltd.
+Full notice: tools/windows/OGRE_LICENSE.txt
+
+zlib
+====
+The unmodified zlib.dll accompanies the OGRE tools. The zlib copyright and
+redistribution notice are in tools/windows/ZLIB_LICENSE.txt.
+Source: https://github.com/madler/zlib
+The bundled DLL's Windows file and product versions both report 1.2.11.
+
+Optional external tools
+=======================
+OgreMeshTool (OGRENext), ImageMagick, and a mesh previewer are not bundled.
+They retain their own licensing when separately installed by the user.

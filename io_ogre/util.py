@@ -1,15 +1,37 @@
 from os.path import split, splitext
-import bpy, logging, logging, mathutils, os, re, subprocess, sys, time
+import bpy, logging, logging, mathutils, os, re, subprocess, sys, time, math
 from . import config
 from . report import Report
 
 logger = logging.getLogger('util')
 
+
+def _popen(*args, **kwargs):
+    if sys.platform.startswith('win'):
+        kwargs.setdefault('creationflags', subprocess.CREATE_NO_WINDOW)
+    return subprocess.Popen(*args, **kwargs)
+
+
+def _call(*args, **kwargs):
+    if sys.platform.startswith('win'):
+        kwargs.setdefault('creationflags', subprocess.CREATE_NO_WINDOW)
+    kwargs.setdefault('timeout', 120)
+    return subprocess.call(*args, **kwargs)
+
+def _communicate(proc, timeout=120):
+    try:
+        return proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.communicate()
+        raise RuntimeError('OGRE tool timed out after %s seconds' % timeout)
+
+
 class ProgressBar:
     def __init__(self, name, total):
         self.name = name
-        self.progressScale = 1.0 / total
-        self.step = max(1, int(total / 100))
+        self.progressScale = 1.0 / max(1, total)
+        self.step = max(1, math.ceil(total / 100))
 
         # Initialize progress through Blender cursor
         bpy.context.window_manager.progress_begin(0, 100)
@@ -24,7 +46,7 @@ class ProgressBar:
         sys.stdout.flush()
 
         # Update progress through Blender cursor
-        bpy.context.window_manager.progress_update(percent)
+        bpy.context.window_manager.progress_update(percent * 100)
 
 def xml_converter_parameters():
     """
@@ -41,12 +63,12 @@ def xml_converter_parameters():
         ctypes.windll.kernel32.SetErrorMode(SEM_NOGPFAULTERRORBOX);
 
     exe = config.get('OGRETOOLS_XML_CONVERTER')
-    proc = subprocess.Popen([exe,'-v'],stdout=subprocess.PIPE)
-    output, _ = proc.communicate()
+    proc = _popen([exe,'-v'],stdout=subprocess.PIPE)
+    output, _ = _communicate(proc)
 
-    pattern = re.compile("OgreXMLConverter ([^ ]+) \((\d+)\.(\d+).(\d+)\) ([^ ]+)")
+    pattern = re.compile(r"OgreXMLConverter (\S+) \((\d+)\.(\d+)\.(\d+)\)(.*)")
 
-    match = pattern.match(output.decode('utf-8'))
+    match = pattern.match(output.decode('utf-8', errors='replace'))
 
     if match:
         version = (int(match.group(2)),int(match.group(3)),int(match.group(4)))
@@ -63,11 +85,11 @@ def mesh_tool_parameters():
     """
     exe = config.get('OGRETOOLS_XML_CONVERTER')
     exe_path, name = os.path.split(exe)
-    proc = subprocess.Popen([exe], stdout=subprocess.PIPE, cwd=exe_path)
-    output, _ = proc.communicate()
+    proc = _popen([exe], stdout=subprocess.PIPE, cwd=exe_path)
+    output, _ = _communicate(proc)
 
-    pattern = re.compile("OgreMeshTool ([^ ]+) \((\d+)\.(\d+).(\d+)\) ([^ ]+)")
-    match = pattern.match(output.decode('utf-8'))
+    pattern = re.compile(r"OgreMeshTool (\S+) \((\d+)\.(\d+)\.(\d+)\)(.*)")
+    match = pattern.match(output.decode('utf-8', errors='replace'))
 
     if match:
         version = (int(match.group(2)), int(match.group(3)), int(match.group(4)))
@@ -82,6 +104,24 @@ def mesh_tool_version():
 # - Edge List / LOD generation
 # - Optimize vertex buffers for shaders
 def mesh_upgrade_tool(infile):
+    import tempfile, shutil
+    from pathlib import Path
+    source = Path(infile)
+    if detect_converter_type() != 'OgreXMLConverter':
+        return
+    with tempfile.TemporaryDirectory(prefix='ogre_upgrade_') as folder:
+        local = Path(folder)/'asset.mesh'
+        shutil.copy2(source,local)
+        if not _mesh_upgrade_tool_impl(str(local)):
+            Report.errors.append('Requested mesh processing failed: '+source.name)
+            return False
+        shutil.copy2(local,source)
+        for logfile in Path(folder).glob('*.log'):
+            shutil.copy2(logfile,source.parent/logfile.name)
+        return True
+
+
+def _mesh_upgrade_tool_impl(infile):
     exe = config.get('OGRETOOLS_MESH_UPGRADER')
 
     # OgreMeshUpgrader only works in tandem with OgreXMLConverter, which are both Ogre v1.x tools.
@@ -111,9 +151,9 @@ def mesh_upgrade_tool(infile):
     # Extract converter type from its output
     try:
         exe_path, exe_name = os.path.split(exe)
-        proc = subprocess.Popen([exe], stdout=subprocess.PIPE, cwd=exe_path)
-        output, _ = proc.communicate()
-        output = output.decode('utf-8')
+        proc = _popen([exe], stdout=subprocess.PIPE, cwd=exe_path)
+        output, _ = _communicate(proc)
+        output = output.decode('utf-8', errors='replace')
     except:
         output = ""
 
@@ -194,8 +234,8 @@ def mesh_upgrade_tool(infile):
 
     # First try to execute with the -log option
     logger.debug("%s" % " ".join(cmd))
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    output, error = proc.communicate()
+    proc = _popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    output, error = _communicate(proc)
 
     if use_logger == False:
         # If this OgreMeshUpgrader does not have -log then use python to write the output of stdout to a log file
@@ -233,6 +273,9 @@ def mesh_upgrade_tool(infile):
         if config.get('PACK_INT_10_10_10_2') is True and '-pack' in cmd:
             logger.info("- Packed Normals for mesh: %s" % filename)
 
+    return proc.returncode == 0
+
+
 def detect_converter_type():
     # todo: executing the same exe twice might not be efficient but will do for now
     # (twice because version will be extracted later in xml_converter_parameters)
@@ -240,9 +283,9 @@ def detect_converter_type():
 
     # extract converter type from its output
     try:
-        proc = subprocess.Popen([exe], stdout=subprocess.PIPE)
-        output, _ = proc.communicate()
-        output = output.decode('utf-8')
+        proc = _popen([exe], stdout=subprocess.PIPE)
+        output, _ = _communicate(proc)
+        output = output.decode('utf-8', errors='replace')
     except Exception as e:
         logger.warn(e)
         output = ""
@@ -253,10 +296,56 @@ def detect_converter_type():
         return "OgreMeshTool"
     return "unknown"
 
-def mesh_convert(infile):
+def mesh_convert(infile, outfile=None):
+    import tempfile, shutil
+    from pathlib import Path
+    source = Path(infile)
+    destination = Path(outfile or (str(source)+'.xml'))
+    if not source.is_file():
+        Report.errors.append('Input file does not exist: '+str(source))
+        return False
+    with tempfile.TemporaryDirectory(prefix='ogre_convert_') as folder:
+        local = Path(folder)/('asset'+source.suffix.lower())
+        shutil.copy2(source,local)
+        xml = Path(str(local)+'.xml')
+        if not _mesh_convert_impl(str(local),str(xml)) or not xml.is_file():
+            return False
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(xml,destination)
+        return True
+
+
+def xml_convert(infile, has_uvs=False):
+    import tempfile, shutil
+    from pathlib import Path
+    source = Path(infile)
+    if not source.is_file():
+        raise ValueError('Export XML does not exist: '+str(source))
+    suffix = '.skeleton.xml' if source.name.lower().endswith('.skeleton.xml') else '.mesh.xml'
+    with tempfile.TemporaryDirectory(prefix='ogre_convert_') as folder:
+        local = Path(folder)/('asset'+suffix)
+        shutil.copy2(source,local)
+        previous = len(Report.errors)
+        _xml_convert_impl(str(local),has_uvs)
+        binary = Path(str(local)[:-4])
+        for logfile in Path(folder).glob('*.log'):
+            shutil.copy2(logfile,source.parent/logfile.name)
+        if len(Report.errors)!=previous:
+            return False
+        if not binary.is_file():
+            Report.errors.append('OGRE converter did not produce a binary file for '+source.name)
+            return False
+        shutil.copy2(binary,Path(str(source)[:-4]))
+        if config.get('EXPORT_XML_DELETE') and source.exists():
+            source.unlink()
+        return True
+
+
+def _mesh_convert_impl(infile, outfile=None):
     # todo: Show a UI dialog to show this error. It's pretty fatal for normal usage.
     # We should show how to configure the converter location in config panel or tell the default path.
     exe = config.get('OGRETOOLS_XML_CONVERTER')
+    outfile = outfile or infile + '.xml'
 
     converter_type = detect_converter_type()
     if converter_type == "OgreXMLConverter":
@@ -279,14 +368,15 @@ def mesh_convert(infile):
             cmd.append('-byte')
 
         # Put logfile into output directory
-        logfile_path, name = os.path.split(infile)
+        logfile_path, name = os.path.split(outfile)
         cmd.append('-log')
         cmd.append(os.path.join(logfile_path, 'OgreXMLConverter.log'))
 
         # Finally, specify input file
         cmd.append(infile)
+        cmd.append(outfile)
 
-        ret = subprocess.call(cmd)
+        ret = _call(cmd)
 
         # Instead of asserting, report an error
         if ret != 0:
@@ -306,19 +396,19 @@ def mesh_convert(infile):
         # Finally, specify input file
         cmd.append(infile)
         # MeshTool needs us to specify output file
-        cmd.append(infile + ".xml")
+        cmd.append(outfile)
         
         # OgreMeshTool must be run from its own directory (so setting cwd accordingly)
         # otherwise it will complain about missing render system (missing plugins_tools.cfg)
         exe_path, name = os.path.split(exe)
         logger.debug("%s" % " ".join(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, cwd=exe_path)
-        output, error = proc.communicate()
+        proc = _popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, cwd=exe_path)
+        output, error = _communicate(proc)
 
         # Open log file to replace old logging feature that the new tool dropped
         # The log file will be created alongside the exported mesh
         if config.get('ENABLE_LOGGING') is True:
-            logfile_path, name = os.path.split(infile)
+            logfile_path, name = os.path.split(outfile)
             logfile = os.path.join(logfile_path, 'OgreMeshTool.log')
         
             with open(logfile, 'w') as log:
@@ -334,7 +424,7 @@ def mesh_convert(infile):
             return True
 
 
-def xml_convert(infile, has_uvs=False):
+def _xml_convert_impl(infile, has_uvs=False):
     # todo: Show a UI dialog to show this error. It's pretty fatal for normal usage.
     # We should show how to configure the converter location in config panel or tell the default path.
     exe = config.get('OGRETOOLS_XML_CONVERTER')
@@ -353,7 +443,7 @@ def xml_convert(infile, has_uvs=False):
 
     if config.get('EXTREMITY_POINTS') > 0 and converter_type == "OgreXMLConverter":
         cmd.append('-x')
-        cmd.append(config.get('EXTREMITY_POINTS'))
+        cmd.append(str(config.get('EXTREMITY_POINTS')))
 
     # OgreMeshTool (OGRE v2): -e = DON'T generate edge lists (for stencil shadows)
     # OgreXMLConverter (OGRE < 1.10): -e = DON'T generate edge lists (for stencil shadows)
@@ -389,8 +479,8 @@ def xml_convert(infile, has_uvs=False):
         cmd.append(infile)
 
         logger.debug("%s" % " ".join(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        output, error = proc.communicate()
+        proc = _popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        output, error = _communicate(proc)
 
         # Instead of asserting, report an error
         if proc.returncode != 0:
@@ -428,8 +518,8 @@ def xml_convert(infile, has_uvs=False):
         # otherwise it will complain about missing render system (missing plugins_tools.cfg)
         exe_path, name = os.path.split(exe)
         logger.debug("%s" % " ".join(cmd))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, cwd=exe_path)
-        output, error = proc.communicate()
+        proc = _popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, cwd=exe_path)
+        output, error = _communicate(proc)
 
         # Open log file to replace old logging feature that the new tool dropped
         # The log file will be created alongside the exported mesh
@@ -453,6 +543,9 @@ def xml_convert(infile, has_uvs=False):
 
 def image_magick( image, origin_filepath, target_filepath, separate_channel=None):
     exe = config.get('IMAGE_MAGICK_CONVERT')
+    import shutil
+    if not exe or not (os.path.isfile(exe) or shutil.which(exe)):
+        raise RuntimeError('Image conversion requires ImageMagick. Set Image Magick Convert in the add-on preferences to magick.exe or convert. Requested output: ' + target_filepath)
     cmd = [ exe, origin_filepath ]
 
     x,y = image.size
@@ -475,7 +568,9 @@ def image_magick( image, origin_filepath, target_filepath, separate_channel=None
 
     cmd.append(target_filepath)
     logger.debug('image magick: "%s"', ' '.join(cmd))
-    subprocess.call(cmd)
+    status = _call(cmd)
+    if status != 0 or not os.path.isfile(target_filepath):
+        raise RuntimeError('ImageMagick failed to create texture: ' + target_filepath)
 
 def swap(vec):
     if config.get('SWAP_AXIS') == 'xyz': return vec
@@ -491,6 +586,37 @@ def swap(vec):
     else:
         logging.warn( 'unknown swap axis mode %s', config.get('SWAP_AXIS') )
         assert 0
+
+def export_name(name):
+    """Name a resource without changing the source Blender datablock."""
+    return clean_object_name((config.get('EXPORT_PREFIX') or '') + name)
+
+
+def axis_matrix():
+    """Blender-to-OGRE basis used for geometry and scene attachments."""
+    return mathutils.Matrix(tuple(zip(*(swap(mathutils.Vector(axis)) for axis in
+        ((1, 0, 0), (0, 1, 0), (0, 0, 1))))))
+
+
+def can_share_skeleton(obj, arm):
+    if not config.get('SHARED_ARMATURE'):
+        return False
+    relative = obj.matrix_world.inverted() @ arm.matrix_world
+    return all(abs(relative[i][j] - (1 if i == j else 0)) < 1e-5
+        for i in range(4) for j in range(4))
+
+
+def exported_bone_names(arm):
+    if not config.get('ONLY_DEFORMABLE_BONES'):
+        return [bone.name for bone in arm.pose.bones]
+    names = set()
+    for bone in arm.pose.bones:
+        if bone.bone.use_deform:
+            while bone:
+                names.add(bone.name)
+                bone = bone.parent
+    return [bone.name for bone in arm.pose.bones if bone.name in names]
+
 
 def uid(ob):
     if ob.uid == 0:
@@ -582,9 +708,12 @@ def objects_merge_materials(objs):
     """
     materials = set()
     for obj in objs:
+        if not len(obj.data.materials):
+            materials.add(None)
         for mat in obj.data.materials:
             # adapt to Blender API change: https://developer.blender.org/docs/release_notes/4.2/eevee/#shading-modes
-            mat['visible_shadow'] = obj.visible_shadow
+            if mat is not None:
+                mat['visible_shadow'] = obj.visible_shadow
             materials.add(mat)
     return materials
 
@@ -662,12 +791,12 @@ def get_parent_matrix( ob, objects ):
         else:
             return get_parent_matrix(ob.parent, objects)
 
-def merge_group( group ):
+def merge_group(group, objects=None):
     logger.info('+ Merge Group: %s' % group.name )
     copies = []
     copies_meshes = []
     for ob in group.objects:
-        if ob.type == 'MESH':
+        if ob.type == 'MESH' and (objects is None or ob in objects):
             o2 = ob.copy()
             copies.append( o2 )
             o2.data = bpy.data.meshes.new_from_object( o2 )
@@ -753,7 +882,7 @@ def get_lights_by_type( T ):
                 r.append( ob )
     return r
 
-invalid_chars_in_name     = '"<>\:' # "<> is xml prohibited, : is Ogre prohibited, \ is standard escape char
+invalid_chars_in_name     = '"<>\\:' # "<> is xml prohibited, : is Ogre prohibited, \ is standard escape char
 invalid_chars_in_filename = '/|?*' + invalid_chars_in_name
 invalid_chars_spaces      = ' \t'
 
