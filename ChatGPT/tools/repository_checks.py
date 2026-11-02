@@ -26,6 +26,7 @@ assert candidate['sha256'] == manifest['sha256'] and candidate['bytes'] == manif
 with zipfile.ZipFile(candidate['archive']) as archive:
     assert archive.testzip() is None
     assert set(archive.namelist()) == set(runtime)
+    assert archive.namelist() == sorted(runtime, key=str.casefold), 'ZIP order must be independent of host filesystem'
     assert all(name.startswith('io_ogre/') and '__pycache__' not in name for name in archive.namelist())
 documents = [ROOT / name for name in ('README.md', 'CHANGELOG.md', 'NOTICE.md', 'CONTRIBUTING.md', 'SECURITY.md')]
 documents += list((ROOT / 'docs').glob('*.md'))

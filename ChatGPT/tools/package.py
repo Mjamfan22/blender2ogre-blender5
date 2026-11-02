@@ -12,7 +12,7 @@ info=next(ast.literal_eval(node.value) for node in tree.body if isinstance(node,
 version='.'.join(map(str,info['version']))
 TARGET=ROOT/('ChatGPT/temp/blender2ogre_Blender_5_2_v'+version+'.zip')
 files=[]
-for path in sorted(SOURCE.rglob('*')):
+for path in sorted(SOURCE.rglob('*'), key=lambda item: item.relative_to(SOURCE).as_posix().casefold()):
     if not path.is_file(): continue
     if '__pycache__' in path.relative_to(SOURCE).parts or path.suffix == '.pyc': continue
     assert not any(part in ('ChatGPT','__pycache__','.git') for part in path.relative_to(SOURCE).parts)
