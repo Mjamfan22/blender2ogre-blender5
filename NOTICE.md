@@ -6,6 +6,6 @@ Copyright (C) 2010 Brett Hartshorn and the upstream contributors. Author credits
 
 Bundled unmodified Windows tools are OGRE 13.3.2, with its MIT notice, and zlib 1.2.11, with its zlib notice. Their source links, copyright and licenses are preserved in [the third-party notice](io_ogre/THIRD_PARTY_NOTICES.txt) and `io_ogre/tools/windows`. Optional ImageMagick and OGRENext tools are not bundled.
 
-The screenshots use a synthetic mesh and generated checker image made for this review. Original local model libraries, private asset-pack files and external reporter attachments are not included. Sanitized result summaries disclose test counts and numeric errors without local usernames, machine paths or fixture contents.
+The README sections, feature examples and images are retained from the original blender2ogre project at the pinned baseline, including their upstream credits. Our fixes and improvements are appended separately. Original local model libraries, private asset-pack files and external reporter attachments are not included. Sanitized result summaries disclose test counts and numeric errors without local usernames, machine paths or fixture contents.
 
 This is an independent private review repository, not an endorsed or official upstream release. No rights in upstream or third-party work are replaced by the repository's private visibility.

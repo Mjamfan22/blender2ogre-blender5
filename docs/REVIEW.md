@@ -2,7 +2,7 @@
 
 The review build is **v0.9.8**. Compared with v0.9.7, its runtime behavior is unchanged: only version/installation documentation and a stale third-party notice were corrected. This repository also adds review documentation, images, portable checks and sanitized release evidence.
 
-The README uses the original project description and feature overview, followed by [our complete fixes and improvements](FIXES.md). Development files use the standard layout described in [LAYOUT.md](LAYOUT.md).
+The README restores the actual upstream sections and their original images, followed by [our complete fixes and improvements](FIXES.md). Development files use the standard layout described in [LAYOUT.md](LAYOUT.md).
 
 1. Read [the patch notes](../CHANGELOG.md) for the full progression from 0.9.4 to 0.9.8.
 2. Review the draft PR comparing `main` with `upstream/master`. The latter is the exact original adaptation baseline; it is a comparison reference. Leave the PR in draft while reviewing.

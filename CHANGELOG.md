@@ -1,5 +1,7 @@
 # Blender 5.2 adaptation 0.9.8
 
+Presentation update: restored the actual original blender2ogre README sections and their images, appended our fixes separately, and removed the generated demo gallery and preview scripts. The installer is unchanged.
+
 Repository documentation update: restored the original project description, added a consolidated fixes/improvements list, and organized development files into `tests/`, `tools/` and `docs/validation/`. Build outputs and disposable profiles now live under ignored `.build/`. The verified installer and runtime behavior are unchanged.
 
 Prepares the existing fixes for private GitHub review. Runtime import/export behavior is unchanged from 0.9.7.

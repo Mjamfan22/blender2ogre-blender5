@@ -65,7 +65,7 @@ The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in th
 
 - Added current installation/upgrade instructions, material mapping and animation-authoring guidance; replaced the dead Meshmoon tutorial link and documented physics/Linux/OGRENext limits.
 - Retained the upstream project identity, full Git ancestry, author credits and LGPL licensing, along with unmodified tool binaries and their notices.
-- Added actual ZIP-install tests, numeric geometry/deformation comparisons and a generated demonstration with screenshots.
+- Added actual ZIP-install tests and numeric geometry/deformation comparisons.
 - Verified all 73 release checks in Blender 5.2.3 and provided a 65-check self-contained subset with explicit fixture skips.
 - Added CI for syntax, exact runtime hashes, deterministic package bytes and documentation links; made archive ordering consistent between Windows and Linux.
 - Organized development files into `tests/`, `tools/` and `docs/validation/`; local outputs and profiles are ignored under `.build/`.

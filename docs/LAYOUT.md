@@ -4,9 +4,9 @@
 | --- | --- |
 | `io_ogre/` | Installable runtime, user documentation and bundled Windows tools |
 | `tests/` | Current regression suites; `tests/fixtures/README.md` describes optional external fixtures |
-| `tools/` | Packaging, verification and demonstration/screenshot helpers |
+| `tools/` | Packaging and verification helpers |
 | `docs/validation/` | Sanitized release/test evidence and per-file hashes |
-| `docs/images/` | Demonstration images and the measured performance chart |
+| `images/` | Original upstream screenshots and feature examples |
 | `.build/` | Ignored local outputs, scratch files and disposable Blender profiles |
 | `examples/`, `test/`, `feature_tests/`, `archived_code/` | Original upstream reference material |
 
