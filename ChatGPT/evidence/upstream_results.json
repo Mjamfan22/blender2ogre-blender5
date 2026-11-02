@@ -1,0 +1,95 @@
+{
+  "blender": "5.2.3 LTS",
+  "module_root": "<local>/addons",
+  "output": "<local>/28df520b",
+  "tests": [
+    {
+      "test": "issue248_selected_child_and_unselected_siblings",
+      "passed": true
+    },
+    {
+      "test": "issue248_selected_only_inside_merge_collection",
+      "passed": true
+    },
+    {
+      "test": "issue255_opaque_and_translucent_materials",
+      "passed": true
+    },
+    {
+      "test": "issue145_generated_and_packed_textures_without_conversion",
+      "passed": true
+    },
+    {
+      "test": "issue263_prefix_references_and_source_names",
+      "passed": true
+    },
+    {
+      "test": "issue263_manual_lod_prefix_references",
+      "passed": true
+    },
+    {
+      "test": "issue87_sparse_node_keys_preserve_endpoints",
+      "passed": true
+    },
+    {
+      "test": "issue59_mirror_toggle_preserves_modifier",
+      "passed": true
+    },
+    {
+      "test": "issue273_unshared_skin_weights_and_binary",
+      "passed": true
+    },
+    {
+      "test": "issue266_multiple_slotted_skeletal_clips",
+      "passed": true
+    },
+    {
+      "test": "issues231_240_camera_light_hierarchy_world_directions",
+      "passed": true
+    },
+    {
+      "test": "issue156_import_inheritance_variables_and_named_overrides",
+      "passed": true
+    },
+    {
+      "test": "issue156_missing_and_cyclic_material_dependencies_reported",
+      "passed": true
+    },
+    {
+      "test": "issue138_renamed_principled_packed_metal_roughness_map",
+      "passed": true
+    },
+    {
+      "test": "issue184_missing_image_converter_has_actionable_error",
+      "passed": true
+    },
+    {
+      "test": "issue263_external_material_names_not_prefixed",
+      "passed": true
+    },
+    {
+      "test": "issue272_import_operator_constructor_initializes_converter",
+      "passed": true
+    },
+    {
+      "test": "skeletal_export_disabled_does_not_leave_dangling_links",
+      "passed": true
+    },
+    {
+      "test": "issue273_filtered_bone_ids_match_both_geometry_modes",
+      "passed": true
+    },
+    {
+      "test": "issue142_shared_skeleton_falls_back_for_distinct_bind_space",
+      "passed": true
+    },
+    {
+      "test": "issue240_reporter_swaptest_geometry_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "issue142_reporter_animated_character_roundtrip",
+      "passed": true
+    }
+  ]
+}

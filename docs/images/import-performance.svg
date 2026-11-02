@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="title desc">
+  <title id="title">Measured import time: 39.0 seconds to 7.7 seconds</title>
+  <desc id="desc">Bakugan body, 190826 triangles and eight UV layers. v0.9.6 baseline: 39.019 seconds. v0.9.7 fresh Blender process: 7.706 seconds. About 5.1 times faster. Timings vary; v0.9.8 retains the implementation.</desc>
+  <rect width="1280" height="400" rx="20" fill="#101c2b"/>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="50" y="61" font-size="15" letter-spacing="2" fill="#69dcc5">MEASURED IMPORT · SAME TRIANGLE-CORNER DATA</text>
+    <text x="50" y="111" font-size="34" font-weight="700" fill="#f2f6fb">39.0 seconds → 7.7 seconds</text>
+    <text x="50" y="146" font-size="18" fill="#aab8c9">190,826 triangles · 8 UV layers · normals and materials preserved</text>
+    <text x="50" y="205" font-size="17" fill="#cbd5e1">v0.9.6</text>
+    <rect x="170" y="181" width="850" height="35" rx="7" fill="#64748b"/>
+    <text x="1040" y="205" font-size="18" fill="#e2e8f0">39.019 s</text>
+    <text x="50" y="269" font-size="17" fill="#cbd5e1">v0.9.7</text>
+    <rect x="170" y="245" width="168" height="35" rx="7" fill="#69dcc5"/>
+    <text x="358" y="269" font-size="18" fill="#a7f3d0">7.706 s · 5.06× faster</text>
+    <text x="50" y="335" font-size="16" fill="#aab8c9">Fresh-process v0.9.7 confirmation; Windows x64 / Blender 5.2.3. OS caches were not flushed.</text>
+    <text x="50" y="363" font-size="16" fill="#aab8c9">v0.9.8 retains this implementation. Results vary by asset and hardware. See VALIDATION.md.</text>
+  </g>
+</svg>

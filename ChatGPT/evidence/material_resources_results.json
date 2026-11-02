@@ -1,0 +1,43 @@
+{
+  "blender": "5.2.3 LTS",
+  "module_root": "<local>/addons",
+  "output": "<local>/9463f121",
+  "tests": [
+    {
+      "test": "shared_pack_abstract_pass_uses_albedo_not_specular",
+      "passed": true
+    },
+    {
+      "test": "shared_named_materials_discovered_from_mesh_references",
+      "passed": true
+    },
+    {
+      "test": "explicit_resource_folder_resolves_shared_dependencies",
+      "passed": true
+    },
+    {
+      "test": "ambiguous_shared_texture_is_reported",
+      "passed": true
+    },
+    {
+      "test": "abstract_pass_cycles_do_not_recurse_forever",
+      "passed": true
+    },
+    {
+      "test": "quoted_named_pass_overrides_keep_inherited_texture",
+      "passed": true
+    },
+    {
+      "test": "standalone_lookup_stays_within_its_asset_folder",
+      "passed": true
+    },
+    {
+      "test": "inherited_alpha_rejection_preserves_image_alpha",
+      "passed": true
+    },
+    {
+      "test": "reported_bakugan_body_imports_all_three_base_textures",
+      "passed": true
+    }
+  ]
+}

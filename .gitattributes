@@ -1,0 +1,10 @@
+* text=auto eol=lf
+io_ogre/** -text
+*.png -text
+*.jpg -text
+*.blend -text
+*.mesh -text
+*.skeleton -text
+*.exe -text
+*.dll -text
+*.zip -text

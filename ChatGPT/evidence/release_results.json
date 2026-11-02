@@ -1,0 +1,103 @@
+{
+  "blender": "5.2.3 LTS",
+  "module_root": "<local>/addons",
+  "output": "<local>/c2d34ea0",
+  "tests": [
+    {
+      "test": "disabled_modifiers_unchanged",
+      "passed": true
+    },
+    {
+      "test": "failed_export_preserves_state_and_files",
+      "passed": true
+    },
+    {
+      "test": "failed_scene_rolls_back_all_imported_ids",
+      "passed": true
+    },
+    {
+      "test": "source_xml_is_never_deleted",
+      "passed": true
+    },
+    {
+      "test": "binary_import_preserves_existing_xml_and_source",
+      "passed": true
+    },
+    {
+      "test": "materials_preserve_existing_and_translate_rgba",
+      "passed": true
+    },
+    {
+      "test": "quoted_texture_filename",
+      "passed": true
+    },
+    {
+      "test": "numeric_custom_normals_and_uv_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "unshared_colors_multiple_uvs_unused_slots",
+      "passed": true
+    },
+    {
+      "test": "unshared_without_material_or_uv",
+      "passed": true
+    },
+    {
+      "test": "shape_export_falls_back_without_data_loss",
+      "passed": true
+    },
+    {
+      "test": "node_fractional_timing_and_animation_import",
+      "passed": true
+    },
+    {
+      "test": "shared_action_uses_matching_slots",
+      "passed": true
+    },
+    {
+      "test": "invalid_vertex_index_rejected_without_changes",
+      "passed": true
+    },
+    {
+      "test": "mesh_overwrite_option_preserves_binary",
+      "passed": true
+    },
+    {
+      "test": "relocated_paths_and_malformed_configuration",
+      "passed": true
+    },
+    {
+      "test": "converter_timeout_terminates_process",
+      "passed": true
+    },
+    {
+      "test": "unicode_and_spaced_input_paths",
+      "passed": true
+    },
+    {
+      "test": "existing_rig_name_is_not_reused",
+      "passed": true
+    },
+    {
+      "test": "submesh_names_and_spaced_materials",
+      "passed": true
+    },
+    {
+      "test": "binary_unicode_directory",
+      "passed": true
+    },
+    {
+      "test": "animated_robot_deformation_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "bundled_upgrader_lod_and_edges",
+      "passed": true
+    },
+    {
+      "test": "combined_material_scene_references_exist",
+      "passed": true
+    }
+  ]
+}
