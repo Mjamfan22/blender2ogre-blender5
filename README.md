@@ -330,4 +330,4 @@ Additionally, the following companies have supported/sponsored the development e
 - **Tools and diagnostics:** bundled the compatible Windows tools and license notices, repaired missing bundled/default paths, added process timeouts and configuration validation, and throttled excessive progress updates.
 - **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **79 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
 
-[Complete fixes and improvements](docs/FIXES.md) · [Version-by-version patch notes](CHANGELOG.md) · [Upstream issue audit](docs/UPSTREAM_ISSUES.md) · [Validation](docs/VALIDATION.md)
+[Complete fixes and improvements](docs/FIXES.md) · [Version-by-version patch notes](CHANGELOG.md) · [Release downloads and documentation](docs/RELEASES.md) · [Upstream issue audit](docs/UPSTREAM_ISSUES.md) · [Validation](docs/VALIDATION.md)

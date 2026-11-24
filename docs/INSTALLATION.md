@@ -2,7 +2,7 @@
 
 Verified platform: **Windows x64, Blender 5.2.3 LTS**, classic OGRE workflow. The installer bundles the Windows OGRE 13.3.2 converter/upgrader and their required DLLs. See [licenses](../NOTICE.md).
 
-1. Download `blender2ogre_Blender_5_2_v0.9.11.zip` from [Releases](https://github.com/Mjamfan22/blender2ogre-blender5/releases) once published. The current release is a draft, so public visitors can build the identical installer from a source checkout using `python tools/package.py` (Python 3.11 or later); the script prints the ZIP location under `.build/temp`. Check its SHA-256 against [the runtime manifest](validation/runtime_manifest.json), or the release's `SHA256SUMS.txt` when available.
+1. Download `blender2ogre_Blender_5_2_v0.9.11.zip` from [the v0.9.11 release](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.11). Check its SHA-256 against the release's `SHA256SUMS.txt` or [the runtime manifest](validation/runtime_manifest.json). Each earlier version has its own installer, source, documentation and changelog in [the release archive](RELEASES.md). To build the identical current installer from source, run `python tools/package.py` (Python 3.11 or later); the script prints the ZIP location under `.build/temp`.
 2. Save open work. In **Edit → Preferences → Add-ons**, disable any older `io_ogre` copy. Keep one installation of this module.
 3. Choose **Install from Disk**, select the ZIP, and enable **OGRE Importer-Exporter (.scene, .mesh, .skeleton)**.
 4. Fully close and reopen Blender. Confirm the add-on shows **0.9.11**, then use **File → Import → Ogre3D (.scene and .mesh)** or the matching Export entry.

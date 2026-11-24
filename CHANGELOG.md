@@ -19,7 +19,7 @@ Fixes missing track, bus and tire textures on older Allstar/Rigs of Rods imports
 
 # Blender 5.2 adaptation 0.9.8
 
-Public fork update: connected the adaptation to OGRECave/blender2ogre's fork network, retained the existing project URL and original README/images, and updated the contribution and installation guides for public access. The release and review PR remain drafts. The installer is unchanged.
+Public fork update: connected the adaptation to OGRECave/blender2ogre's fork network, retained the existing project URL and original README/images, and updated the contribution and installation guides for public access. The release and review PR were initially prepared as drafts. Releases v0.9.4–v0.9.11 are now public with their respective documentation in [the release archive](docs/RELEASES.md); the review PR remains a draft. The installer is unchanged.
 
 Presentation update: restored the actual original blender2ogre README sections and their images, appended our fixes separately, and removed the generated demo gallery and preview scripts. The installer is unchanged.
 
