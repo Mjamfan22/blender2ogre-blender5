@@ -153,7 +153,7 @@ class Bone(object):
 
     def clear_pose_transform( self ):
         self.bone.location.zero()
-        self.bone.scale.Fill(3, 1.0)
+        self.bone.scale = (1.0, 1.0, 1.0)
         self.bone.rotation_quaternion.identity()
         self.bone.rotation_euler.zero()
         #self.bone.rotation_axis_angle  #ignore axis angle mode
@@ -161,8 +161,8 @@ class Bone(object):
     def save_pose_transform( self ):
         self.savedPoseLocation = self.bone.location.copy()
         self.savedPoseScale = self.bone.scale.copy()
-        self.savedPoseRotationQ = self.bone.rotation_quaternion
-        self.savedPoseRotationE = self.bone.rotation_euler
+        self.savedPoseRotationQ = self.bone.rotation_quaternion.copy()
+        self.savedPoseRotationE = self.bone.rotation_euler.copy()
         #self.bone.rotation_axis_angle  #ignore axis angle mode
 
     def restore_pose_transform( self ):
@@ -322,6 +322,9 @@ def findArmature( ob ):
                 return ob2
     return arm
 
+from .. import animation as anim_api
+
+
 class Skeleton(object):
     def get_bone( self, name ):
         for b in self.bones:
@@ -375,7 +378,7 @@ class Skeleton(object):
                 self.roots.append( b )
 
     def write_animation( self, arm, actionName, frameBegin, frameEnd, doc, parentElement ):
-        _fps = float( bpy.context.scene.render.fps )
+        _fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
         #boneNames = sorted( [bone.name for bone in arm.pose.bones] )
         bone_tracks = []
         for bone in self.bones:
@@ -389,15 +392,18 @@ class Skeleton(object):
         # OR export keyframe each frame over animation range (Exported animation will be affected by Inverse Kinematics, Drivers and modified F-Curves)
         if config.get('ONLY_KEYFRAMES') is True: # Only keyframes
             frame_range = [] # Holds a list of keyframes for export
-            action = bpy.data.actions[actionName] # actionName is the animation name (NLAtrack child)
+            action = arm.animation_data.action if arm.animation_data else None # actionName is the animation name (NLAtrack child)
             # loops through all channels on the f-curve --> Code taken from: https://blender.stackexchange.com/questions/8387/how-to-get-keyframe-data-from-python
-            for fcu in action.fcurves:
+            for fcu in anim_api.fcurves(action, arm) if action else ():
                 for keyframe in fcu.keyframe_points: # Loops through all the keyframes in the channel
-                    kf = int(keyframe.co[0]) # key frame number
-                    if kf not in frame_range: # only add the key frames in once. Keyframes repeat in different channels
+                    kf = float(keyframe.co[0]) # key frame number
+                    if frameBegin <= kf <= frameEnd and kf not in frame_range: # only add the key frames in once. Keyframes repeat in different channels
                         frame_range.append(kf)
         else: # Keyframes each frame
-            frame_range = range( int(frameBegin), int(frameEnd) + 1, bpy.context.scene.frame_step) #thanks to Vesa, NOTE: frame_step is [( # of frames / FPS ) / # of frames ] -- I think??
+            from .node_anim import sample_frames
+            frame_range = sample_frames(frameBegin, frameEnd, bpy.context.scene.frame_step) #thanks to Vesa, NOTE: frame_step is [( # of frames / FPS ) / # of frames ] -- I think??
+
+        frame_range = sorted(set(frame_range) | {float(frameBegin), float(frameEnd)})
 
         logger.info(" - Exporting action: %s" % actionName)
 
@@ -407,7 +413,8 @@ class Skeleton(object):
         for frame in frame_range:
             progressbar.update( frame - frameBegin )
 
-            bpy.context.scene.frame_set(frame)
+            from .node_anim import set_frame
+            set_frame(frame)
             for bone in self.roots:
                 bone.update()
             for track in bone_tracks:
@@ -498,6 +505,7 @@ class Skeleton(object):
         elif arm.animation_data:
             savedUseNla = arm.animation_data.use_nla
             savedAction = arm.animation_data.action
+            savedSlot = arm.animation_data.action_slot
             arm.animation_data.use_nla = False
             if not len( arm.animation_data.nla_tracks ):
                 Report.warnings.append('You must assign an NLA strip to armature (%s) that defines the start and end frames' % arm.name)
@@ -517,7 +525,7 @@ class Skeleton(object):
                     if action is None:
                         logger.error("NLA strip '%s' has no action" % strip.name)
                         continue
-                    actions[ action.name ] = [action, strip.action_frame_start, strip.action_frame_end]
+                    actions[ action.name ] = [action, strip.action_frame_start, strip.action_frame_end, strip.action_slot]
                     logger.info('  - Action name: %s' % action.name)
                     logger.info('  -  Strip name: %s' % strip.name)
 
@@ -525,12 +533,13 @@ class Skeleton(object):
             for actionName in actionNames:
                 actionData = actions[ actionName ]
                 action = actionData[0]
-                arm.animation_data.action = action  # set as the current action
+                anim_api.assign_action(arm, action, actionData[3])  # set the matching action slot
                 suppressedBones = []
                 if config.get('ONLY_KEYFRAMED_BONES') is True:
                     keyframedBones = {}
-                    for group in action.groups:
-                        keyframedBones[ group.name ] = True
+                    for curve in anim_api.fcurves(action, arm):
+                        if curve.group:
+                            keyframedBones[curve.group.name] = True
                     for b in self.bones:
                         if (not b.name in keyframedBones) and b.shouldOutput:
                             # suppress this bone's output
@@ -543,6 +552,8 @@ class Skeleton(object):
                     bone.shouldOutput = True
             # restore these to what they originally were
             arm.animation_data.action = savedAction
+            if savedAction and savedSlot:
+                arm.animation_data.action_slot = savedSlot
             arm.animation_data.use_nla = savedUseNla
 
         # restore

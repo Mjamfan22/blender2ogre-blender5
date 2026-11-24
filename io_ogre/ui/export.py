@@ -38,7 +38,7 @@ class _OgreCommonExport_(object):
 
     @classmethod
     def poll(cls, context):
-        if context.active_object and context.mode != 'EDIT_MESH':
+        if context.active_object and context.mode == 'OBJECT':
             return True
 
     def __init__(self):
@@ -226,18 +226,24 @@ class _OgreCommonExport_(object):
         logger.debug(" + Build Platform: %s" % bpy.app.build_platform.decode('UTF-8'))
 
         # Start exporting the elements in the scene
-        scene.dot_scene(target_path, target_file_name_no_ext)
+        try:
+            from ..safety import ExportState, ExportFiles
+            with ExportState(), ExportFiles(target_path, config.get('MESH_OVERWRITE')) as output:
+                scene.dot_scene(str(output.folder), target_file_name_no_ext)
+                if not Report.errors:
+                    output.commit()
+        except Exception as exc:
+            logger.exception('OGRE export failed')
+            Report.errors.append(str(exc))
+            self.report({'WARNING'}, 'OGRE export failed: ' + str(exc))
+        finally:
+            if file_handler is not None:
+                for logger_name in list(logging.Logger.manager.loggerDict):
+                    logging.getLogger(logger_name).removeHandler(file_handler)
+                file_handler.close()
         Report.show()
 
-        # Flush and close all logging file handlers
-        if config.get('ENABLE_LOGGING') is True and file_handler is not None:
-            for logger_name in logging.Logger.manager.loggerDict.keys():
-                logging.getLogger(logger_name).handlers.clear()
-
-            file_handler.flush()
-            file_handler.close()
-
-        return {'FINISHED'}
+        return {'CANCELLED'} if Report.errors else {'FINISHED'}
 
     filepath : StringProperty(name="File Path",
         description="Filepath used for exporting Ogre .scene file",

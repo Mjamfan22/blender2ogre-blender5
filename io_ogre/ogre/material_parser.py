@@ -418,7 +418,11 @@ class MaterialParser:
                 if pass_nr > 1 and token.type != ScriptToken.TID_RBRACKET:
                     continue
             
-                if token.type == ScriptToken.TID_WORD and token.lexeme == "texture_unit":
+                if token.type == ScriptToken.TID_WORD and token.lexeme in ('scene_blend', 'cull_hardware'):
+                    Material[token.lexeme] = tokens[i+1].lexeme
+                elif token.type == ScriptToken.TID_WORD and token.lexeme == 'lighting_stage' and tokens[i+1].lexeme == 'metal_roughness':
+                    Material['pbr'] = True
+                elif token.type == ScriptToken.TID_WORD and token.lexeme == "texture_unit":
                     state = SID_TEXTURE_UNIT
 
                 elif token.type == ScriptToken.TID_WORD and token.lexeme == "ambient":
@@ -493,7 +497,7 @@ class MaterialParser:
                         imageName = tokens[i + 1].lexeme
 
                     elif tokens[i + 1].type == ScriptToken.TID_QUOTE:
-                        imageName = self.unquote(tokens[i + 1].lexeme)
+                        imageName = MaterialParser.unquote(tokens[i + 1].lexeme)
                     
                     else:
                         logger.error("Texture name not found: %s" % token)
@@ -524,7 +528,7 @@ class MaterialParser:
         if not os.path.isfile(pathMaterial):
             # Search directory for .material
             for filename in os.listdir(folder):
-                if ".material" in filename:
+                if filename.lower().endswith(".material"):
                     # Material file
                     pathMaterial = os.path.join(folder, filename)
                     MaterialParser.xParseMaterial(meshMaterials, pathMaterial, folder)

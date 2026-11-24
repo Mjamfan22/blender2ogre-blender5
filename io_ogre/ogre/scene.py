@@ -173,7 +173,7 @@ def dot_scene(path, scene_name=None):
 
         converter_type= detect_converter_type()
         if converter_type == "OgreMeshTool":
-            dot_materialsv2json(materials, path, separate_files=config.get('SEPARATE_MATERIALS'), prefix=prefix)
+            dot_materialsv2json([mat for mat in materials if mat is not None], path, separate_files=config.get('SEPARATE_MATERIALS'), prefix=prefix)
         elif converter_type == "OgreXMLConverter":
             dot_materials(materials, path, separate_files=config.get('SEPARATE_MATERIALS'), prefix=prefix)
         else: # Unknown converter type, error
@@ -418,15 +418,18 @@ def ogre_document(materials, path):
     for n in (nodes, external, environment):
         scn.appendChild( n )
 
-    # External files
-    for mat in materials:
-        if mat is None: continue
-        item = doc.createElement('item')
-        external.appendChild( item )
-        item.setAttribute('type', 'material')
-        a = doc.createElement('file')
-        item.appendChild( a )
-        a.setAttribute('name', '%s.material' % material.material_name(mat))
+    # Reference actual generated material scripts, including combined scripts
+    # and the placeholder for geometry without an assigned material.
+    if materials:
+        for filename in sorted(os.listdir(path)):
+            if not filename.lower().endswith(('.material', '.material.json')):
+                continue
+            item = doc.createElement('item')
+            external.appendChild(item)
+            item.setAttribute('type','material')
+            entry = doc.createElement('file')
+            item.appendChild(entry)
+            entry.setAttribute('name',filename)
 
     # Environment settings
     world = bpy.context.scene.world
@@ -803,15 +806,12 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
         sx = bpy.context.scene.render.resolution_x
         sy = bpy.context.scene.render.resolution_y
         if ob.data.type == "PERSP":
-            fovY = 0.0
-            if (sx*aspx > sy*aspy):
-                fovY = 2 * math.atan(sy * aspy * 16.0 / (ob.data.lens * sx * aspx))
-            else:
-                fovY = 2 * math.atan(16.0 / ob.data.lens)
-            # fov in radians - like OgreMax - requested by cyrfer
-            fov = math.radians( fovY * 180.0 / math.pi )
+            frame = ob.data.view_frame(scene=bpy.context.scene)
+            height = max(v.y for v in frame) - min(v.y for v in frame)
+            fov = 2 * math.atan(height / (2 * abs(frame[0].z)))
             c.setAttribute('projectionType', "perspective")
             c.setAttribute('fov', '%6f' % fov)
+            c.setAttribute('aspectRatio', '%6f' % (sx*aspx/(sy*aspy)))
         else: # ob.data.type == "ORTHO":
             c.setAttribute('projectionType', "orthographic")
             c.setAttribute('orthoScale', '%6f' % ob.data.ortho_scale)
