@@ -26,6 +26,11 @@ def create_material(name, info):
         shader.inputs['Emission Color'].default_value = (*info['emissive'][:3], 1)
         shader.inputs['Emission Strength'].default_value = 1
     transparent = rgba[3] < 1 or info.get('scene_blend') in ('alpha_blend', 'src_alpha')
+    rejection = info.get('alpha_rejection', ())
+    masked = len(rejection) >= 2 and rejection[0] in ('greater', 'greater_equal')
+    if masked:
+        material['ogre_alpha_threshold'] = max(0,min(1,float(rejection[1])/255))
+        material['ogre_alpha_mode'] = 'BLEND' if transparent else 'MASK'
     material.surface_render_method = 'BLENDED' if transparent else 'DITHERED'
     material.use_backface_culling = info.get('cull_hardware') not in ('none', None)
     texture_path = info.get('texture')
@@ -34,7 +39,17 @@ def create_material(name, info):
         texture.location = (-600, 0)
         texture.image = bpy.data.images.load(texture_path, check_existing=True)
         material.node_tree.links.new(texture.outputs['Color'], shader.inputs['Base Color'])
-        if transparent:
-            material.node_tree.links.new(texture.outputs['Alpha'], shader.inputs['Alpha'])
+        alpha = texture.outputs['Alpha']
+        if masked:
+            mask = nodes.new('ShaderNodeMath'); mask.operation = 'GREATER_THAN'
+            mask.inputs[1].default_value = material['ogre_alpha_threshold']
+            material.node_tree.links.new(alpha, mask.inputs[0])
+            product = nodes.new('ShaderNodeMath'); product.operation = 'MULTIPLY'
+            material.node_tree.links.new(alpha, product.inputs[0])
+            material.node_tree.links.new(mask.outputs[0], product.inputs[1])
+            alpha = product.outputs[0]
+        if transparent or masked:
+            material.node_tree.links.new(alpha, shader.inputs['Alpha'])
+        nodes.active = texture
         Report.textures.append(texture.image.name)
     return material

@@ -105,6 +105,7 @@ _CONFIG_DEFAULTS_ALL = {
     #'SHOW_LOG_NAME' : False,
 
     # Import
+    'IMPORT_RESOURCE_PATH' : '',
     'IMPORT_XML_DELETE' : False,
     'IMPORT_NORMALS' : True,
     'MERGE_SUBMESHES' : True,

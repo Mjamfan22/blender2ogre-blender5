@@ -12,12 +12,16 @@ logger = logging.getLogger('material_resolver')
 
 
 class MaterialResolver:
-    def __init__(self, folder):
+    def __init__(self, folder, resource_folder=''):
+        from .resource_index import ResourceIndex
         self.folder = Path(folder).resolve()
+        self.resources = ResourceIndex(folder, resource_folder)
         self.loaded = set()
         self.definitions = {}
         self.abstract = set()
         self.globals = {}
+        self.templates = {}
+        self.sources = {}
 
     def warn(self, message):
         logger.warning(message)
@@ -70,10 +74,10 @@ class MaterialResolver:
         path = Path(path).resolve()
         if path in self.loaded:
             return
-        if not path.is_relative_to(self.folder) or not path.is_file():
+        if not self.resources.allowed(path) or not path.is_file():
             self.warn('Material import is missing or outside the asset folder: ' + str(path))
             return
-        if len(self.loaded) >= 100 or path.stat().st_size > 8*1024*1024:
+        if len(self.loaded) >= 256 or path.stat().st_size > 8*1024*1024:
             raise ValueError('Material import limit exceeded')
         self.loaded.add(path)
         nodes = self.parse(path.read_text(encoding='utf-8-sig'), path)
@@ -84,7 +88,7 @@ class MaterialResolver:
                 if '*' in pattern or '?' in pattern:
                     # OGRE resource groups are not available here. Limit imports
                     # to local .material assets, never scan outside this folder.
-                    if candidate.is_absolute() and candidate.parent.resolve().is_relative_to(self.folder):
+                    if self.resources.allowed(candidate.parent):
                         matches = sorted(candidate.parent.glob(candidate.name))
                         if not matches:
                             self.warn('Material import has no matches: ' + pattern)
@@ -92,17 +96,29 @@ class MaterialResolver:
                             if match.suffix.lower() == '.material':
                                 self.load(match)
                 else:
-                    self.load(candidate)
+                    found = self.resources.find(pattern, path.parent)
+                    if found:
+                        self.load(found)
+                    else:
+                        self.warn('Material script not found in the asset resources: ' + pattern)
             elif header[0] == 'set' and len(header) >= 3:
                 self.globals[header[1]] = header[2:]
         # Local declarations override imported declarations of the same name.
         for header, children in nodes:
-            if header[0] in ('material', 'abstract'):
+            if header[0] in ('material', 'pass', 'technique', 'texture_unit', 'abstract'):
                 abstract = header[0] == 'abstract'
                 if header[0] == 'abstract':
                     header = header[1:]
-                if len(header) >= 2 and header[0] == 'material':
+                if len(header) >= 2 and header[0] in ('material', 'pass', 'technique', 'texture_unit'):
                     name = self.unquote(header[1])
+                    key = header[0], name
+                    previous = self.sources.get(key)
+                    if previous and previous.parent == self.folder and path.parent != self.folder:
+                        continue
+                    self.templates[key] = (header, children or [])
+                    self.sources[key] = path
+                    if header[0] != 'material':
+                        continue
                     self.definitions[name] = (header, children or [])
                     if abstract:
                         self.abstract.add(name)
@@ -120,7 +136,8 @@ class MaterialResolver:
                 key = header[:2] if kind == 'set' else header[:1]
                 matches = [i for i,(h,c) in enumerate(result) if c is None and h[:len(key)] == key]
             elif len(header) > 1:
-                matches = [i for i,(h,c) in enumerate(result) if c is not None and h == header]
+                matches = [i for i,(h,c) in enumerate(result) if c is not None and
+                    [MaterialResolver.unquote(v) for v in h] == [MaterialResolver.unquote(v) for v in header]]
             else:
                 ordinal = ordinals.get(kind, 0)
                 ordinals[kind] = ordinal+1
@@ -133,20 +150,60 @@ class MaterialResolver:
         return result
 
     def resolve(self, name, chain=()):
+        return self.resolve_object('material', name, chain)
+
+    def resolve_object(self, kind, name, chain=()):
         if len(chain) >= 64:
             raise ValueError('Material inheritance exceeds 64 levels')
-        if name in chain:
-            raise ValueError('Cyclic material inheritance: ' + ' -> '.join((*chain,name)))
-        if name not in self.definitions:
-            raise ValueError('Missing parent material: ' + name)
-        header, body = self.definitions[name]
+        label = kind + ':' + name
+        if label in chain:
+            raise ValueError('Cyclic %s inheritance: %s' % (kind, ' -> '.join((*chain,label))))
+        if (kind,name) not in self.templates:
+            raise ValueError('Missing parent %s: %s' % (kind,name))
+        chain = (*chain,label)
+        header, body = self.templates[kind,name]
+        body = self.expand_objects(body, chain)
         if ':' in header:
             i = header.index(':')
             if i+2 != len(header):
                 raise ValueError('Only single material inheritance is supported: ' + name)
-            base = self.resolve(self.unquote(header[i+1]), (*chain,name))
+            base = self.resolve_object(kind, self.unquote(header[i+1]), chain)
             body = self.merge(base, body)
         return deepcopy(body)
+
+    def expand_objects(self, nodes, chain):
+        result = []
+        for header, children in nodes:
+            if children is None:
+                result.append((header, None))
+                continue
+            children = self.expand_objects(children, chain)
+            if ':' in header:
+                index = header.index(':')
+                if index+2 != len(header):
+                    raise ValueError('Only single object inheritance is supported')
+                base = self.resolve_object(header[0], self.unquote(header[index+1]), chain)
+                children = self.merge(base, children)
+                header = header[:index]
+            result.append((header, children))
+        return result
+
+    def discover(self, names):
+        def ready():
+            try:
+                for name in names:
+                    self.resolve(name)
+                return True
+            except ValueError:
+                return False
+        for path in self.resources.material_files():
+            if ready():
+                break
+            if path not in self.loaded:
+                try:
+                    self.load(path)
+                except (OSError, ValueError) as error:
+                    self.warn('Could not read shared material script %s: %s' % (path,error))
 
     def substitute(self, nodes, variables):
         variables = dict(variables)
@@ -169,7 +226,7 @@ class MaterialResolver:
             result.append((expanded, self.substitute(children,variables) if children is not None else None))
         return result
 
-    def expand(self, path):
+    def expand(self, path, names=None):
         self.load(path)
         lines = []
         def render(nodes):
@@ -177,7 +234,7 @@ class MaterialResolver:
                 lines.append(' '.join(header))
                 if children is not None:
                     lines.append('{'); render(children); lines.append('}')
-        for name in self.definitions:
+        for name in (list(self.definitions) if names is None else sorted(names)):
             if name in self.abstract:
                 continue
             try:

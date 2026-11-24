@@ -89,7 +89,7 @@ class _OgreCommonImport_(object):
 
         # Options associated with each section
         section_options = {
-            "General" : ["IM_V2_MESH_TOOL_VERSION"],
+            "General" : ["IM_IMPORT_RESOURCE_PATH", "IM_V2_MESH_TOOL_VERSION"],
             "Armature" : ["IM_IMPORT_ANIMATIONS", "IM_ROUND_FRAMES", "IM_USE_SELECTED_SKELETON"], 
             "Mesh" : ["IM_IMPORT_NORMALS", "IM_MERGE_SUBMESHES"], 
             "Shape Keys" : ["IM_IMPORT_SHAPEKEYS"], 
@@ -268,6 +268,11 @@ class _OgreCommonImport_(object):
     # IM_Vx_<config-name> for OgreXMLConverter and OgreMeshTool (hide only when no converter found)
 
     # General
+    IM_IMPORT_RESOURCE_PATH : StringProperty(
+        name='Resource Folder',
+        description='Optional folder containing shared material scripts and textures. Nearby recognized asset packs are found automatically',
+        subtype='DIR_PATH',
+        default=config.get('IMPORT_RESOURCE_PATH')) = {}
     IM_SWAP_AXIS : EnumProperty(
         items=config.AXIS_MODES,
         name='Swap Axis',

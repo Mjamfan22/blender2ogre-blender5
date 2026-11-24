@@ -1,3 +1,15 @@
+# Blender 5.2 adaptation 0.9.6
+
+Fixes the missing shared materials reported while importing the Bakugan Dragonoid body from a Rigs of Rods/Sim-Monsters pack.
+
+- Finds nearby recognized asset-pack roots and resolves shared script/texture references across pack subdirectories. Adds an optional Resource Folder import control for other layouts.
+- Resolves abstract pass/technique/texture-unit inheritance, including the `pass : specular_pass` pattern, as well as quoted named overrides.
+- Discovers shared material definitions referenced by mesh submeshes even when they are not declared in the mesh's local script.
+- Reads the base texture from the first pass instead of replacing it with a later specular/shine map. Preserves supported inherited alpha rejection and image alpha.
+- Reports ambiguous/missing resources and cyclic templates. Leaves original pack files unchanged and avoids warnings for unused material definitions.
+
+Adds nine shared-resource regressions, including the full 190,826-triangle Bakugan body and its three image-backed materials. All 68 checks run from the independently installed release ZIP. Custom OGRE shaders and later-pass lighting/reflection effects remain approximations.
+
 # Blender 5.2 adaptation 0.9.5
 
 First repair batch from an audit of all 27 open OGRECave/blender2ogre issues. This is a local adaptation, not an upstream release or a claim that all upstream reports are resolved.
