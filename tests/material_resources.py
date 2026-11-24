@@ -42,7 +42,8 @@ def read(file):
 @case
 def exporter_placeholder_import_is_informational_and_keeps_geometry():
     folder=OUT/'placeholder_mesh'
-    file=write(folder/'collision.mesh.xml','''<mesh>
+    source_name='placeholder_'+uuid.uuid4().hex[:8]
+    file=write(folder/(source_name+'.mesh.xml'),'''<mesh>
 <sharedgeometry vertexcount="3"><vertexbuffer positions="true">
 <vertex><position x="0" y="0" z="0"/></vertex>
 <vertex><position x="1" y="0" z="0"/></vertex>
@@ -54,12 +55,36 @@ def exporter_placeholder_import_is_informational_and_keeps_geometry():
     result=bpy.ops.ogre.import_mesh(filepath=str(file),IM_USE_SELECTED_SKELETON=False,IM_Vx_ENABLE_LOGGING=False)
     assert result=={'FINISHED'},Report.errors
     obj=next(o for o in bpy.context.scene.objects if o.type=='MESH')
+    assert obj.name==obj.data.name==source_name,(obj.name,obj.data.name)
     assert len(obj.data.vertices)==3 and len(obj.data.polygons)==1
     assert len(obj.data.materials)==1
     assert obj.data.materials[0]['ogre_placeholder'] is True
     assert not any(n.type=='TEX_IMAGE' for n in obj.data.materials[0].node_tree.nodes)
     assert not Report.warnings and not Report.errors,(Report.warnings,Report.errors)
     assert len(Report.messages)==1 and 'no source material or texture' in Report.messages[0],Report.messages
+
+@case
+def placeholder_file_names_keep_dots_and_are_unique_for_separate_submeshes():
+    folder=OUT/'placeholder_names'
+    source_name='collision.parts_'+uuid.uuid4().hex[:8]
+    material_name='Authored_'+uuid.uuid4().hex[:8]
+    submesh='<submesh material="%s" usesharedvertices="true"><faces count="1"><face v1="0" v2="1" v3="2"/></faces></submesh>'
+    file=write(folder/(source_name+'.xml'),'''<mesh><sharedgeometry vertexcount="3"><vertexbuffer positions="true">
+<vertex><position x="0" y="0" z="0"/></vertex><vertex><position x="1" y="0" z="0"/></vertex><vertex><position x="0" y="1" z="0"/></vertex>
+</vertexbuffer></sharedgeometry><submeshes>'''+submesh%'_missing_material_'+submesh%'_missing_material_'+submesh%material_name+'</submeshes></mesh>')
+    write(folder/(source_name+'.material'),'material '+material_name+' { technique { pass { diffuse 0.2 0.3 0.4 1 } } }')
+    for _ in range(2):
+        before=set(bpy.data.objects)
+        assert bpy.ops.ogre.import_mesh(filepath=str(file),IM_MERGE_SUBMESHES=False,IM_USE_SELECTED_SKELETON=False,IM_Vx_ENABLE_LOGGING=False)=={'FINISHED'}
+        imported=[o for o in bpy.data.objects if o not in before and o.type=='MESH']
+        assert len(imported)==3
+        for obj in imported:
+            prefix=source_name if obj.data.materials[0].get('ogre_placeholder') else material_name
+            assert obj.name.startswith(prefix) and obj.data.name.startswith(prefix),(obj.name,obj.data.name,prefix)
+            assert len(obj.data.vertices)==3 and len(obj.data.polygons)==1
+        assert not Report.warnings,Report.warnings
+    objects=[o for o in bpy.context.scene.objects if o.type=='MESH']
+    assert len({o.name for o in objects})==len({o.data.name for o in objects})==6
 
 @case
 def supplied_placeholder_definition_is_preserved_and_missing_names_warn():

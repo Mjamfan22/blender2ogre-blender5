@@ -987,7 +987,8 @@ def bCreateSubMeshes(meshData, meshName):
         subMeshName = subMeshData['material']
 
         # Create mesh and object
-        object_name = meshName if shared_merge else subMeshName
+        source_material = subMeshData.get('materialOrig', subMeshName)
+        object_name = meshName if shared_merge or source_material == '_missing_material_' else subMeshName
         me = bpy.data.meshes.new(object_name)
         ob = bpy.data.objects.new(object_name, me)
 
@@ -1179,9 +1180,8 @@ def _load_mesh(filepath, workdir):
         return {'CANCELLED'}
 
     folder = os.path.dirname(filepath)
-    nameDotMeshDotXml = os.path.split(pathMeshXml)[1]
-    nameDotMesh = os.path.splitext(nameDotMeshDotXml)[0]
-    onlyName = os.path.splitext(nameDotMesh)[0]
+    source_name = os.path.basename(filepath)
+    onlyName = source_name[:-9] if source_name.lower().endswith('.mesh.xml') else os.path.splitext(source_name)[0]
 
     # Material
     meshMaterials = []

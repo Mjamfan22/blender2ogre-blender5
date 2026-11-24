@@ -1,3 +1,7 @@
+# Blender 5.2 adaptation 0.9.11
+
+Names imported placeholder-material objects and their mesh datablocks after the source filename instead of `_missing_material_`, for example `Vegas19PART2Col.mesh` becomes `Vegas19PART2Col`. Handles binary/XML inputs, preserves dots in filenames and retains Blender's unique suffixes for separate parts or repeated imports. Other authored material names retain their existing naming behavior.
+
 # Blender 5.2 adaptation 0.9.10
 
 Recognizes the exporter's reserved `_missing_material_` name as an unassigned surface when no material definition is supplied. Collision meshes retain a neutral placeholder with one informational message instead of two misleading missing-parent/definition warnings. Supplied definitions and genuine missing-resource diagnostics are preserved. Adds two regression checks for the placeholder import and definition precedence.

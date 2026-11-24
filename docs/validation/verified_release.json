@@ -1,14 +1,14 @@
 {
-  "version": "0.9.10",
+  "version": "0.9.11",
   "blender": "5.2.3 LTS",
   "installed_zip": true,
-  "passed": 78,
+  "passed": 79,
   "failed": 0,
   "skipped": [],
   "full_suite": true,
   "date": "2026-11-23",
-  "sha256": "68a6cc1394cc56e49ee27bd2feecfdd3643420fc8dc654f5cfa1c48ebf8d0d3d",
-  "bytes": 2263791,
+  "sha256": "154fc32b187700ae603beca9598ef570edb07ded4bfa576f8a1d5173971b4994",
+  "bytes": 2264049,
   "files": 59,
   "tests": [
     {
@@ -249,6 +249,10 @@
     },
     {
       "test": "exporter_placeholder_import_is_informational_and_keeps_geometry",
+      "passed": true
+    },
+    {
+      "test": "placeholder_file_names_keep_dots_and_are_unique_for_separate_submeshes",
       "passed": true
     },
     {

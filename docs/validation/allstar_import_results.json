@@ -1,9 +1,11 @@
 {
-  "version": "0.9.10",
+  "version": "0.9.11",
   "blender": "5.2.3 LTS",
   "assets": [
     {
       "mesh": "Allstar2019day2Fs",
+      "object_name": "Allstar2019day2Fs",
+      "mesh_data_name": "Allstar2019day2Fs",
       "vertices": 19901,
       "triangles": 38616,
       "materials": {
@@ -15,6 +17,8 @@
     },
     {
       "mesh": "Allstar2019day2FsProps",
+      "object_name": "Allstar2019day2FsProps",
+      "mesh_data_name": "Allstar2019day2FsProps",
       "vertices": 166764,
       "triangles": 177332,
       "materials": {
@@ -39,6 +43,8 @@
     },
     {
       "mesh": "Vegas19PART2Col",
+      "object_name": "Vegas19PART2Col",
+      "mesh_data_name": "Vegas19PART2Col",
       "vertices": 28117,
       "triangles": 20464,
       "materials": {
@@ -60,5 +66,5 @@
   },
   "date": "2026-11-23",
   "installed_zip": true,
-  "installer_sha256": "68a6cc1394cc56e49ee27bd2feecfdd3643420fc8dc654f5cfa1c48ebf8d0d3d"
+  "installer_sha256": "154fc32b187700ae603beca9598ef570edb07ded4bfa576f8a1d5173971b4994"
 }
