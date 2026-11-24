@@ -137,6 +137,8 @@ def load_scene(filepath):
             item = bpy.data.objects.new(data.name, data)
             collection.objects.link(item)
             item.parent = obj
+            item.rotation_mode = 'QUATERNION'
+            item.rotation_quaternion = Quaternion((1, 0, 0), math.pi/2)
             Report.lights.append(item.name)
 
         for camera in node.findall('camera'):
@@ -155,6 +157,8 @@ def load_scene(filepath):
             item = bpy.data.objects.new(data.name,data)
             collection.objects.link(item)
             item.parent = obj
+            item.rotation_mode = 'QUATERNION'
+            item.rotation_quaternion = Quaternion((1, 0, 0), math.pi/2)
             Report.cameras.append(item.name)
 
         for child in node.findall('node'):

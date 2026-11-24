@@ -1,6 +1,16 @@
 
 # Exporting for Physics Engines
 
+## Blender 5.2: using a convex or compound collider in your game
+
+The add-on exports mesh geometry and scene transforms. It does not serialize a Bullet collision shape or build rigid bodies in the receiving application. Its historical `collisionFile`/`collisionPrim` scene metadata is not a portable Bullet API, and a Blender rigid-body setting alone does not make the exported mesh a Bullet collider.
+
+For a movable convex collider, duplicate the visual object, simplify it, and create a convex hull as described below. Select the hull and export it as an ordinary separate mesh with **Apply Modifiers** enabled. Keep its local origin and transform aligned with the visual object. In the application, read that mesh's vertex positions and construct a `btConvexHullShape`; do not treat the render mesh's material or its name as physics data.
+
+For a concave movable object, split the collider into several convex pieces in Blender and keep each piece as a separate object. Export their geometry and relative transforms. At runtime, create a hull for each piece and add it with its local transform to a `btCompoundShape`. The application owns the shapes, rigid-body mass, inertia, collision filtering and lifetime. This preserves the hollows that would disappear if you used one convex hull around the entire object. Automatic compound-shape generation/import is not implemented by this add-on.
+
+See Bullet's [convex hull shape](https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/CollisionShapes/btConvexHullShape.h) and [compound shape](https://github.com/bulletphysics/bullet3/blob/master/src/BulletCollision/CollisionShapes/btCompoundShape.h) interfaces for the receiving application. The older illustrated authoring examples follow.
+
 ## Index
  - [Introduction](#introduction)
  - [Creating a Convex Hull](#creating-a-convex-hull)

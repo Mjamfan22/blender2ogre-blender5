@@ -72,24 +72,19 @@ def write_submeshnames (doc, materials, used=None):
         doc.leaf_tag('submeshname', {'name': material_name(material).removeprefix('extern.') if material else '_missing_material_', 'index': index})
     doc.end_tag('submeshnames')
 
-def write_skeletonlink (obj_name, arm, doc):
+def write_skeletonlink (obj_name, arm, doc, ob):
     if arm is None:
         return
     skeleton_name = obj_name
-    if config.get('SHARED_ARMATURE') is True:
-        skeleton_name = arm.data.name
+    if util.can_share_skeleton(ob, arm):
+        skeleton_name = util.export_name(arm.data.name)
     skeleton_name = util.clean_object_name(skeleton_name)
     doc.leaf_tag('skeletonlink', { 'name' : '%s.skeleton' % skeleton_name })
 
 def calc_boneindex (arm):
     if arm is None:
         return {}
-    boneIndexFromName = {}
-    boneIndex = 0
-    for bone in arm.pose.bones:
-        boneIndexFromName[ bone.name ] = boneIndex
-        boneIndex += 1
-    return boneIndexFromName
+    return {name:index for index,name in enumerate(util.exported_bone_names(arm))}
 
 def calc_geometry (mesh, ob, materials, tangents, arm):
     bm = bmesh.new()
@@ -122,8 +117,7 @@ def calc_geometry (mesh, ob, materials, tangents, arm):
     boneindex = calc_boneindex (arm)
     TRIM_BONE_WEIGHTS = config.get('TRIM_BONE_WEIGHTS')
 
-    import sys
-    progressScale = 1.0 / max(1, len(mesh.polygons) - 1)
+    progressbar = util.ProgressBar('Vertices', len(mesh.polygons))
     for fidx, face in enumerate(mesh.polygons):
         tris = []
         tris.append( (face.vertices[0], face.vertices[1], face.vertices[2]) )
@@ -131,9 +125,7 @@ def calc_geometry (mesh, ob, materials, tangents, arm):
             tris.append( (face.vertices[0], face.vertices[2], face.vertices[3]) )
                     
         # Progress
-        percent = fidx * progressScale
-        sys.stdout.write( "\rVertices [" + '=' * int(percent*50) + '>' + '.' * int(50-percent*50) + "] " + str(int(percent*10000)/100.0) + "%   ")
-        sys.stdout.flush()
+        progressbar.update(fidx)
         
         # should be triangles
         if len(face.vertices) != 3:
@@ -320,7 +312,7 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
         doc.end_tag('submeshes')
 
         write_submeshnames (doc, materials, [i for i in faces if faces[i]])
-        write_skeletonlink (obj_name, arm, doc)
+        write_skeletonlink (obj_name, arm, doc, ob)
 
         doc.close() # reported by Reyn
         f.close ()
@@ -644,7 +636,7 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
             lod_current_distance = lod_distance
 
             for level in range(lod_levels + 1)[1:]:
-                lod_ob_name = obj_name + '_LOD_' + str(level)
+                lod_ob_name = ob.data.name + '_LOD_' + str(level)
                 lod_manual_ob = bpy.context.scene.objects.get(lod_ob_name)
 
                 if lod_manual_ob:
@@ -674,12 +666,12 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
                     logger.info("- Writing LOD %s for distance %s, with %s vertices and %s faces" % 
                         (lod['level'], lod['distance'], len(lod_manual_ob.data.vertices), len(lod_manual_ob.data.loop_triangles)))
 
-                    dot_mesh(lod_manual_ob, path, lod_manual_ob.data.name, ignore_shape_animation, normals, tangents, isLOD=True)
+                    dot_mesh(lod_manual_ob, path, util.export_name(lod_manual_ob.data.name), ignore_shape_animation, normals, tangents, isLOD=True)
 
                     # 'value' is the distance this LOD kicks in for the 'Distance' strategy.
                     doc.leaf_tag('lodmanual', {
                         'value'    : str(lod['distance']),
-                        'meshname' : lod_manual_ob.data.name + ".mesh"
+                        'meshname' : util.export_name(lod_manual_ob.data.name) + ".mesh"
                     })
 
                 doc.end_tag('levelofdetail')
@@ -812,37 +804,18 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
             if lod_pre_mesh_count != len(bpy.data.meshes):
                 logger.warn('- After LOD generation, cleanup failed to erase all temporary data!')
 
-        arm = ob.find_armature()
+        arm = ob.find_armature() if config.get('ARMATURE_ANIMATION') else None
         if arm:
             skeleton_name = obj_name
-            if config.get('SHARED_ARMATURE') is True:
-                skeleton_name = arm.data.name
+            if util.can_share_skeleton(ob, arm):
+                skeleton_name = util.export_name(arm.data.name)
             skeleton_name = util.clean_object_name(skeleton_name)
 
             doc.leaf_tag('skeletonlink', {
                     'name' : '%s.skeleton' % skeleton_name
             })
             doc.start_tag('boneassignments', {})
-            boneOutputEnableFromName = {}
-            boneIndexFromName = {}
-            for bone in arm.pose.bones:
-                boneOutputEnableFromName[ bone.name ] = True
-                if config.get('ONLY_DEFORMABLE_BONES') is True:
-                    # if we found a deformable bone,
-                    if bone.bone.use_deform:
-                        # visit all ancestor bones and mark them "output enabled"
-                        parBone = bone.parent
-                        while parBone:
-                            boneOutputEnableFromName[ parBone.name ] = True
-                            parBone = parBone.parent
-                    else:
-                        # non-deformable bone, no output
-                        boneOutputEnableFromName[ bone.name ] = False
-            boneIndex = 0
-            for bone in arm.pose.bones:
-                boneIndexFromName[ bone.name ] = boneIndex
-                if boneOutputEnableFromName[ bone.name ]:
-                    boneIndex += 1
+            boneIndexFromName = calc_boneindex(arm)
             badverts = 0
             for vidx, v in enumerate(_remap_verts_):
                 check = 0
@@ -1046,7 +1019,7 @@ def _dot_mesh_impl(ob, path, force_name=None, ignore_shape_animation=False, norm
       * overwrite - bool. (optional) default False
     """
     obj_name = force_name or ob.data.name
-    obj_name = clean_object_name(obj_name)
+    obj_name = clean_object_name(obj_name) if isLOD else util.export_name(obj_name)
     target_file = os.path.join(path, '%s.mesh.xml' % obj_name )
 
     material_prefix = kwargs.get('material_prefix', '')
@@ -1081,7 +1054,7 @@ def _dot_mesh_impl(ob, path, force_name=None, ignore_shape_animation=False, norm
             disable_mods = ['ARMATURE']
 
         for mod in ob.modifiers:
-            if mod.type in disable_mods and mod.show_viewport is True:
+            if (mod.type in disable_mods or not config.get('APPLY_MODIFIERS')) and mod.show_viewport is True:
                 logger.debug("Disabling Modifier: %s" % mod.name)
                 mod.show_viewport = False
 

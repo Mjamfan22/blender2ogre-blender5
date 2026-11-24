@@ -93,12 +93,12 @@ class _OgreCommonExport_(object):
 
         # Options associated with each section
         section_options = {
-            "General" : ["EX_SWAP_AXIS", "EX_V2_MESH_TOOL_VERSION", "EX_EXPORT_XML_DELETE"],
-            "Scene" : ["EX_SCENE", "EX_SELECTED_ONLY", "EX_EXPORT_HIDDEN", "EX_FORCE_CAMERA", "EX_FORCE_LIGHTS", "EX_NODE_ANIMATION", "EX_EXPORT_SKYBOX", "EX_SKYBOX_RESOLUTION"],
+            "General" : ["EX_SWAP_AXIS", "EX_EXPORT_PREFIX", "EX_V2_MESH_TOOL_VERSION", "EX_EXPORT_XML_DELETE"],
+            "Scene" : ["EX_SCENE", "EX_SELECTED_ONLY", "EX_EXPORT_HIDDEN", "EX_FORCE_CAMERA", "EX_FORCE_LIGHTS", "EX_NODE_ANIMATION", "EX_NODE_KEYFRAMES", "EX_EXPORT_SKYBOX", "EX_SKYBOX_RESOLUTION"],
             "Materials" : ["EX_MATERIALS", "EX_SEPARATE_MATERIALS", "EX_COPY_SHADER_PROGRAMS", "EX_USE_FFP_PARAMETERS"],
             "Textures" : ["EX_DDS_MIPS", "EX_FORCE_IMAGE_FORMAT"],
             "Armature" : ["EX_ARMATURE_ANIMATION", "EX_SHARED_ARMATURE", "EX_ONLY_KEYFRAMES", "EX_ONLY_DEFORMABLE_BONES", "EX_ONLY_KEYFRAMED_BONES", "EX_OGRE_INHERIT_SCALE", "EX_TRIM_BONE_WEIGHTS"],
-            "Mesh" : ["EX_MESH", "EX_MESH_OVERWRITE", "EX_ARRAY", "EX_V1_EXTREMITY_POINTS", "EX_Vx_GENERATE_EDGE_LISTS", "EX_GENERATE_TANGENTS", "EX_Vx_PACK_INT_10_10_10_2", "EX_Vx_OPTIMISE_ANIMATIONS", "EX_Vx_OPTIMISE_VERTEX_CACHE", "EX_V2_OPTIMISE_VERTEX_BUFFERS", "EX_V2_OPTIMISE_VERTEX_BUFFERS_OPTIONS", "EX_UNSHARE_GEOMETRY"],
+            "Mesh" : ["EX_MESH", "EX_MESH_OVERWRITE", "EX_APPLY_MODIFIERS", "EX_ARRAY", "EX_V1_EXTREMITY_POINTS", "EX_Vx_GENERATE_EDGE_LISTS", "EX_GENERATE_TANGENTS", "EX_Vx_PACK_INT_10_10_10_2", "EX_Vx_OPTIMISE_ANIMATIONS", "EX_Vx_OPTIMISE_VERTEX_CACHE", "EX_V2_OPTIMISE_VERTEX_BUFFERS", "EX_V2_OPTIMISE_VERTEX_BUFFERS_OPTIONS", "EX_UNSHARE_GEOMETRY"],
             "LOD" : ["EX_LOD_GENERATION", "EX_LOD_LEVELS", "EX_LOD_DISTANCE", "EX_LOD_PERCENT"],
             "Shape Animation" : ["EX_SHAPE_ANIMATIONS", "EX_SHAPE_NORMALS"],
             "Logging" : ["EX_Vx_ENABLE_LOGGING", "EX_Vx_DEBUG_LOGGING"]
@@ -259,6 +259,18 @@ class _OgreCommonExport_(object):
     # EX_Vx_<config-name> for OgreXMLConverter and OgreMeshTool (hide only when no converter found)
 
     # General
+    EX_EXPORT_PREFIX : StringProperty(
+        name='Resource Prefix',
+        description='Prefix exported mesh, skeleton, material and object names. External materials keep their names',
+        default=config.get('EXPORT_PREFIX')) = {}
+    EX_APPLY_MODIFIERS : BoolProperty(
+        name='Apply Modifiers',
+        description='Export evaluated modifiers without changing the original. Armatures remain skeletal animations',
+        default=config.get('APPLY_MODIFIERS')) = {}
+    EX_NODE_KEYFRAMES : BoolProperty(
+        name='Only Write Node Keyframes',
+        description='Sample authored keys and clip endpoints only. Leave off for Bezier curves, constraints, drivers and procedural motion',
+        default=config.get('NODE_KEYFRAMES')) = {}
     EX_SWAP_AXIS : EnumProperty(
         items=config.AXIS_MODES,
         name='Swap Axis',

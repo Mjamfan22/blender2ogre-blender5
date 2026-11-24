@@ -119,6 +119,7 @@ def dot_scene(path, scene_name=None):
     exported_armatures = []
 
     # Find merge groups
+    eligible = set(objects)
     mgroups = []
     mobjects = []
     for ob in objects:
@@ -133,7 +134,7 @@ def dot_scene(path, scene_name=None):
             exported_meshes.append( rem.data.name )
 
     for group in mgroups:
-        merged = merge_group( group )
+        merged = merge_group(group, objects=eligible)
         objects.append( merged )
         temps.append( merged )
 
@@ -352,7 +353,7 @@ def _ogre_node_helper( doc, ob, prefix='', pos=None, rot=None, scl=None ):
     mat = ob.matrix_local
 
     o = doc.createElement('node')
-    o.setAttribute('name', prefix + ob.name)
+    o.setAttribute('name', (config.get('EXPORT_PREFIX') or '') + prefix + ob.name)
 
     if pos:
         v = swap(pos)
@@ -391,6 +392,21 @@ def _ogre_node_helper( doc, ob, prefix='', pos=None, rot=None, scl=None ):
     o.appendChild(s)
 
     return o
+
+def attachment_node(doc, parent, ob):
+    """Correct camera/light forward axes without rotating their children."""
+    basis = util.axis_matrix().to_quaternion()
+    if basis.angle < 1e-8:
+        return parent
+    node = doc.createElement('node')
+    node.setAttribute('name', (config.get('EXPORT_PREFIX') or '') + ob.name + '__orientation')
+    rotation = doc.createElement('rotation')
+    for axis, value in zip(('qw', 'qx', 'qy', 'qz'), basis):
+        rotation.setAttribute(axis, '%.9f' % value)
+    node.appendChild(rotation)
+    parent.appendChild(node)
+    return node
+
 
 def ogre_document(materials, path):
     now = time.time()
@@ -659,8 +675,15 @@ def dot_scene_skybox_export( path ):
 # Recursive Node export
 def dot_scene_node_export( ob, path, doc=None, rex=None,
         exported_meshes=[], meshes=[], mesh_collision_prims={}, mesh_collision_files={},
-        exported_armatures=[], prefix='', objects=[], xmlparent=None ):
+        exported_armatures=[], prefix='', objects=[], xmlparent=None, hierarchy=None ):
 
+    if hierarchy is None:
+        hierarchy = set(objects)
+        for item in objects:
+            parent = item.parent
+            while parent:
+                hierarchy.add(parent)
+                parent = parent.parent
     o = _ogre_node_helper( doc, ob )
     xmlparent.appendChild(o)
 
@@ -682,7 +705,7 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
         # if it has no faces at all, the object itself will not be exported, BUT 
         # it might have children
 
-    if ob.type == 'MESH' and len(ob.data.loop_triangles):
+    if ob in objects and ob.type == 'MESH' and len(ob.data.loop_triangles):
         collisionFile = None
         collisionPrim = None
         if ob.data.name in mesh_collision_prims:
@@ -691,9 +714,9 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
             collisionFile = mesh_collision_files[ ob.data.name ]
         
         e = doc.createElement('entity')
-        o.appendChild(e); e.setAttribute('name', ob.name)
+        o.appendChild(e); e.setAttribute('name', (config.get('EXPORT_PREFIX') or '') + ob.name)
         prefix = ''
-        e.setAttribute('meshFile', '%s%s.mesh' % (prefix, clean_object_name(ob.data.name)) )
+        e.setAttribute('meshFile', '%s.mesh' % util.export_name(ob.data.name))
         
         # Set the instancing attribute if the object belongs to the correct group
         _mesh_instance_helper(e, ob, "static")
@@ -736,7 +759,7 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
         # Deal with Array modifier
         vecs = [ ob.matrix_world.to_translation() ]
         for mod in ob.modifiers:
-            if (config.get("ARRAY") is True) and (mod.type == 'ARRAY'):
+            if config.get('APPLY_MODIFIERS') and (config.get("ARRAY") is True) and (mod.type == 'ARRAY'):
                 if mod.fit_type != 'FIXED_COUNT':
                     logger.warning("<%s> Unsupported array-modifier type: %s, only 'Fixed Count' is supported" % (ob.name, mod.fit_type))
                     Report.warnings.append("Object \"%s\" has unsupported array-modifier type: %s, only 'Fixed Count' is supported" % (ob.name, mod.fit_type))
@@ -760,7 +783,7 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
                             e = doc.createElement('entity')
                             ao.appendChild(e)
                             e.setAttribute('name', '_array_%s_%s' % (count, ob.data.name))
-                            e.setAttribute('meshFile', '%s.mesh' % clean_object_name(ob.data.name))
+                            e.setAttribute('meshFile', '%s.mesh' % util.export_name(ob.data.name))
 
                             # Set the instancing attribute if the object belongs to the correct group
                             _mesh_instance_helper(e, ob, "static")
@@ -786,7 +809,7 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
 
                     e = doc.createElement('entity')
                     ao.appendChild(e); e.setAttribute('name', ('%s_particle_%s_%s' % (clean_object_name(ob.data.name), index, clean_object_name(dupob.data.name))))
-                    e.setAttribute('meshFile', '%s.mesh' % clean_object_name(dupob.data.name))
+                    e.setAttribute('meshFile', '%s.mesh' % util.export_name(dupob.data.name))
                     
                     # Set the instancing attribute if the object belongs to the correct group
                     _mesh_instance_helper(e, dupob, "static")
@@ -797,10 +820,10 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
                 logger.warn("<%s> Particle System %s is not supported for export (should be of type: 'Hair' and render_type: 'Object')" % (ob.name, partsys.name))
                 Report.warnings.append("Object \"%s\" has Particle System: \"%s\" not supported for export (should be of type: 'Hair' and render_type: 'Object')" % (ob.name, partsys.name))
 
-    elif ob.type == 'CAMERA':
+    elif ob in objects and ob.type == 'CAMERA':
         Report.cameras.append( ob.name )
         c = doc.createElement('camera')
-        o.appendChild(c); c.setAttribute('name', ob.data.name)
+        attachment_node(doc, o, ob).appendChild(c); c.setAttribute('name', (config.get('EXPORT_PREFIX') or '') + ob.data.name)
         aspx = bpy.context.scene.render.pixel_aspect_x
         aspy = bpy.context.scene.render.pixel_aspect_y
         sx = bpy.context.scene.render.resolution_x
@@ -819,10 +842,10 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
         a.setAttribute('near', '%6f' % ob.data.clip_start)    # requested by cyrfer
         a.setAttribute('far', '%6f' % ob.data.clip_end)
 
-    elif ob.type == 'LIGHT' and ob.data.type in 'POINT SPOT SUN AREA'.split():
+    elif ob in objects and ob.type == 'LIGHT' and ob.data.type in 'POINT SPOT SUN AREA'.split():
         Report.lights.append( ob.name )
         l = doc.createElement('light')
-        o.appendChild(l)
+        attachment_node(doc, o, ob).appendChild(l)
 
         if ob.data.type == 'POINT':
             l.setAttribute('type', 'point')
@@ -883,6 +906,8 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
         node_anim.dot_nodeanim(ob, doc, o)
 
     for child in ob.children:
+        if child not in hierarchy:
+            continue
         dot_scene_node_export( child,
             path, doc = doc, rex = rex,
             exported_meshes = exported_meshes,
@@ -892,5 +917,6 @@ def dot_scene_node_export( ob, path, doc=None, rex=None,
             exported_armatures = exported_armatures,
             prefix = prefix,
             objects=objects,
+            hierarchy=hierarchy,
             xmlparent=o
         )

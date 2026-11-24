@@ -3,6 +3,7 @@ from .. import config
 from .. import util
 from ..report import Report
 from .material import material_name, ShaderImageTextureWrapper, gather_metallic_roughness_texture
+from .material_settings import alpha_mode, alpha_threshold
 from bpy_extras import node_shader_utils
 import bpy.path
 
@@ -208,11 +209,12 @@ class OgreMaterialv2JsonGenerator(object):
         blendblocks = {}
         tex_filename = self.prepare_texture(bsdf.alpha_texture)
         # Give blendblock specific settings
-        if material.blend_method == "OPAQUE":     # OPAQUE will pass for now
+        mode = alpha_mode(material, bsdf)
+        if mode == 'OPAQUE':
             pass
-        elif material.blend_method == "CLIP":     # CLIP enables alpha_test (alpha rejection)
-            datablock["alpha_test"] = ["greater_equal", material.alpha_threshold, False]
-        elif material.blend_method == "BLEND": 
+        elif mode == 'MASK':
+            datablock["alpha_test"] = ["greater_equal", alpha_threshold(material), False]
+        elif mode == 'BLEND':
             datablock["transparency"] = {
                 "mode": "Transparent",        
                 "use_alpha_from_textures": tex_filename != None,  # DEFAULT

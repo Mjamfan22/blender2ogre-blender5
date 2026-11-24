@@ -58,7 +58,7 @@ If you are upgrading from a previous version of blender2ogre and having problems
 ## Video Tutorials
 * [General Usage](http://www.youtube.com/watch?feature=player_embedded&v=3EpwEsB0_kk)
 * [Animations](http://www.youtube.com/watch?feature=player_embedded&v=5oVM0Lmeb68)
-* [Meshmoon: Video and text instructions on how to install and use blender2ogre addon](http://doc.meshmoon.com/index.html?page=from-blender-to-meshmoon-part-1)
+* The historical Meshmoon tutorial is no longer available. For this adaptation, use the installation and usage instructions in [README.md](README.md).
 
 ## Exporting Meshes
 To export a blender model: `File Menu > Export > Ogre3D (.scene & .mesh)`.

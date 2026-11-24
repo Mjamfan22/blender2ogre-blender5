@@ -302,13 +302,12 @@ class MaterialParser:
         logger.info("* Parsing material file: %s" % materialFile)
 
         try:
-            filein = open(materialFile)
-        except Exception:
-            logger.warning("Material: File %s not found!" % materialFile)
+            from .material_resolver import MaterialResolver
+            data = MaterialResolver(folder).expand(materialFile)
+        except (OSError, ValueError) as error:
+            logger.warning("Could not parse material file: %s" % materialFile)
+            logger.warning('%s', error)
             return None
-
-        data = filein.read()
-        filein.close()
         
         sl = ScriptLexer()
         tokens = sl.tokenize(data, materialFile)

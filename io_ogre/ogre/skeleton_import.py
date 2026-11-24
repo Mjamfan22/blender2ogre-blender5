@@ -52,10 +52,12 @@ def create_skeleton(data,name):
         for source,bone in bones.items():
             item = armature.edit_bones.new(source)
             names[source] = item.name
-            item.matrix = CHANGE_BASIS @ rest[source]['global']
             lengths = [(rest[child]['global'].translation-rest[source]['global'].translation).length
                 for child in bones if bones[child].get('parent')==source]
             item.length = max(0.01, min((value for value in lengths if value>1e-5),default=0.2))
+            # A newly created EditBone has zero length. Setting its matrix
+            # before giving it length loses its direction when length changes.
+            item.matrix = CHANGE_BASIS @ rest[source]['global']
             item['OGREID'] = bone['id']
         for source,bone in bones.items():
             if bone.get('parent'):

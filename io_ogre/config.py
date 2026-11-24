@@ -36,6 +36,7 @@ CONFIG = {}
 _CONFIG_DEFAULTS_ALL = {
     # General
     'SWAP_AXIS' : 'xz-y',
+    'EXPORT_PREFIX' : '',
     'MESH_TOOL_VERSION' : 'v2',
     'EXPORT_XML_DELETE' : True,
 
@@ -47,7 +48,7 @@ _CONFIG_DEFAULTS_ALL = {
     'FORCE_CAMERA' : True,
     'FORCE_LIGHTS' : True,
     'NODE_ANIMATION' : True,
-    #'NODE_KEYFRAMES' : False,
+    'NODE_KEYFRAMES' : False,
     'EXPORT_SKYBOX': False,
     'SKYBOX_RESOLUTION': 2048,
 
@@ -74,6 +75,7 @@ _CONFIG_DEFAULTS_ALL = {
 
     # Mesh
     'MESH' : True,
+    'APPLY_MODIFIERS' : True,
     'MESH_OVERWRITE' : True,
     'ARRAY' : True,
     'EXTREMITY_POINTS' : 0,

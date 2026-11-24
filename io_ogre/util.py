@@ -1,5 +1,5 @@
 from os.path import split, splitext
-import bpy, logging, logging, mathutils, os, re, subprocess, sys, time
+import bpy, logging, logging, mathutils, os, re, subprocess, sys, time, math
 from . import config
 from . report import Report
 
@@ -31,7 +31,7 @@ class ProgressBar:
     def __init__(self, name, total):
         self.name = name
         self.progressScale = 1.0 / max(1, total)
-        self.step = max(1, int(total / 100))
+        self.step = max(1, math.ceil(total / 100))
 
         # Initialize progress through Blender cursor
         bpy.context.window_manager.progress_begin(0, 100)
@@ -46,7 +46,7 @@ class ProgressBar:
         sys.stdout.flush()
 
         # Update progress through Blender cursor
-        bpy.context.window_manager.progress_update(percent)
+        bpy.context.window_manager.progress_update(percent * 100)
 
 def xml_converter_parameters():
     """
@@ -543,6 +543,9 @@ def _xml_convert_impl(infile, has_uvs=False):
 
 def image_magick( image, origin_filepath, target_filepath, separate_channel=None):
     exe = config.get('IMAGE_MAGICK_CONVERT')
+    import shutil
+    if not exe or not (os.path.isfile(exe) or shutil.which(exe)):
+        raise RuntimeError('Image conversion requires ImageMagick. Set Image Magick Convert in the add-on preferences to magick.exe or convert. Requested output: ' + target_filepath)
     cmd = [ exe, origin_filepath ]
 
     x,y = image.size
@@ -565,7 +568,9 @@ def image_magick( image, origin_filepath, target_filepath, separate_channel=None
 
     cmd.append(target_filepath)
     logger.debug('image magick: "%s"', ' '.join(cmd))
-    _call(cmd)
+    status = _call(cmd)
+    if status != 0 or not os.path.isfile(target_filepath):
+        raise RuntimeError('ImageMagick failed to create texture: ' + target_filepath)
 
 def swap(vec):
     if config.get('SWAP_AXIS') == 'xyz': return vec
@@ -581,6 +586,37 @@ def swap(vec):
     else:
         logging.warn( 'unknown swap axis mode %s', config.get('SWAP_AXIS') )
         assert 0
+
+def export_name(name):
+    """Name a resource without changing the source Blender datablock."""
+    return clean_object_name((config.get('EXPORT_PREFIX') or '') + name)
+
+
+def axis_matrix():
+    """Blender-to-OGRE basis used for geometry and scene attachments."""
+    return mathutils.Matrix(tuple(zip(*(swap(mathutils.Vector(axis)) for axis in
+        ((1, 0, 0), (0, 1, 0), (0, 0, 1))))))
+
+
+def can_share_skeleton(obj, arm):
+    if not config.get('SHARED_ARMATURE'):
+        return False
+    relative = obj.matrix_world.inverted() @ arm.matrix_world
+    return all(abs(relative[i][j] - (1 if i == j else 0)) < 1e-5
+        for i in range(4) for j in range(4))
+
+
+def exported_bone_names(arm):
+    if not config.get('ONLY_DEFORMABLE_BONES'):
+        return [bone.name for bone in arm.pose.bones]
+    names = set()
+    for bone in arm.pose.bones:
+        if bone.bone.use_deform:
+            while bone:
+                names.add(bone.name)
+                bone = bone.parent
+    return [bone.name for bone in arm.pose.bones if bone.name in names]
+
 
 def uid(ob):
     if ob.uid == 0:
@@ -755,12 +791,12 @@ def get_parent_matrix( ob, objects ):
         else:
             return get_parent_matrix(ob.parent, objects)
 
-def merge_group( group ):
+def merge_group(group, objects=None):
     logger.info('+ Merge Group: %s' % group.name )
     copies = []
     copies_meshes = []
     for ob in group.objects:
-        if ob.type == 'MESH':
+        if ob.type == 'MESH' and (objects is None or ob in objects):
             o2 = ob.copy()
             copies.append( o2 )
             o2.data = bpy.data.meshes.new_from_object( o2 )

@@ -27,12 +27,14 @@ def dot_skeleton(obj, path, **kwargs):
 
     arm = obj.find_armature()
     if arm and (config.get('ARMATURE_ANIMATION') is True):
-        exported_armatures = kwargs.get('exported_armatures')
+        exported_armatures = kwargs.get('exported_armatures', [])
 
         name = kwargs.get('force_name') or obj.data.name
-        if config.get('SHARED_ARMATURE') is True:
+        if util.can_share_skeleton(obj, arm):
             name = kwargs.get('force_name') or arm.data.name
-        name = util.clean_object_name(name)
+        elif config.get('SHARED_ARMATURE'):
+            Report.warnings.append('Using a separate skeleton for %s because its mesh and armature bind spaces differ' % obj.name)
+        name = util.export_name(name)
 
         # Lets export the Armature only once
         if name in exported_armatures:
@@ -80,7 +82,7 @@ class Bone(object):
 
         self.skeleton = skeleton
         self.name = pbone.name
-        self.matrix = rbone.matrix_local.copy() # armature space
+        self.matrix = skeleton.mesh_space_matrix(rbone.matrix_local)
         #self.matrix_local = rbone.matrix.copy() # space?
 
         self.bone = pbone        # safe to hold pointer to pose bone, not edit bone!
@@ -94,7 +96,7 @@ class Bone(object):
 
     def update(self):        # called on frame update
         pbone = self.bone
-        pose =  pbone.matrix.copy()
+        pose = self.skeleton.mesh_space_matrix(pbone.matrix)
         self._inverse_total_trans_pose = pose.inverted()
         # calculate difference to parent bone
         if self.parent:
@@ -333,15 +335,18 @@ class Skeleton(object):
         return None
 
     def __init__(self, ob ):
-        if ob.location.x != 0 or ob.location.y != 0 or ob.location.z != 0:
-            Report.warnings.append('Mesh (%s): is offset from Armature - zero transform is required' % ob.name)
-        if ob.scale.x != 1 or ob.scale.y != 1 or ob.scale.z != 1:
-            Report.warnings.append('Mesh (%s): has been scaled - scale(1,1,1) is required' % ob.name)
-
         self.object = ob
         self.bones = []
         mats = {}
         self.arm = arm = findArmature( ob )
+        self.mesh_space = ob.matrix_world.inverted() @ arm.matrix_world
+        location, rotation, scale = self.mesh_space.decompose()
+        self.bind_scale = sum(scale) / 3
+        if self.mesh_space.to_3x3().determinant() <= 0 or min(scale) <= 0 or max(scale)-min(scale) > max(scale)*1e-5:
+            raise ValueError('Mesh and armature need a uniform positive relative scale: ' + ob.name)
+        reconstructed = mathutils.Matrix.LocRotScale(location, rotation, scale)
+        if max(abs(reconstructed[i][j]-self.mesh_space[i][j]) for i in range(4) for j in range(4)) > 1e-5:
+            raise ValueError('Mesh/armature bind transform contains unsupported shear: ' + ob.name)
         arm.hide_viewport = False
         #arm.layers = [True]*20      # can not have anything hidden - REQUIRED?
 
@@ -357,10 +362,6 @@ class Skeleton(object):
         #x,y,z = arm.matrix_local.copy().inverted().to_euler()
         #e = mathutils.Euler( (x,z,y) )
         #self.object_space_transformation = e.to_matrix().to_4x4()
-        x,y,z = arm.matrix_local.to_euler()
-        if x != 0 or y != 0 or z != 0:
-            Report.warnings.append('Armature: %s is rotated - (rotation is ignored)' % arm.name)
-
         ## setup bones for Ogre format ##
         for b in self.bones:
             b.rebuild_tree()
@@ -376,6 +377,12 @@ class Skeleton(object):
                 #if rot.w > ep or rot.x > ep or rot.y > ep or rot.z < 1.0-ep:
                 #    Report.errors.append('Root bone has non-zero transform (rotation offset)')
                 self.roots.append( b )
+
+    def mesh_space_matrix(self, matrix):
+        # OGRE has no bind scale. Remove the constant uniform scale from all
+        # global bone matrices; it cancels in pose @ inverse(bind) skinning.
+        location, rotation, scale = (self.mesh_space @ matrix).decompose()
+        return mathutils.Matrix.LocRotScale(location, rotation, scale / self.bind_scale)
 
     def write_animation( self, arm, actionName, frameBegin, frameEnd, doc, parentElement ):
         _fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base

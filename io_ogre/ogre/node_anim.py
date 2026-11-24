@@ -5,7 +5,7 @@ https://github.com/OGRECave/EasyOgreExporter/blob/master/source/ExScene.cpp
 """
 import bpy
 import mathutils
-from .. import animation as anim_api, util
+from .. import animation as anim_api, util, config
 
 
 def sample_frames(first, last, step=1):
@@ -80,7 +80,11 @@ def write_animation(ob, action, frame_start, frame_end, doc, xmlnode, name=None)
             'length':'%.9f' % ((frame_end-frame_start)/fps)}.items():
         clip.setAttribute(key, value)
     container.appendChild(clip)
-    for frame in sample_frames(frame_start, frame_end, scene.frame_step):
+    frames = sample_frames(frame_start, frame_end, scene.frame_step)
+    if config.get('NODE_KEYFRAMES'):
+        frames = sorted({float(frame_start), float(frame_end)} | {
+            frame for frame in get_keyframes(action, ob) if frame_start <= frame <= frame_end})
+    for frame in frames:
         set_frame(frame)
         local = ob.matrix_local
         pos = util.swap(local.to_translation()) - base_pos
