@@ -1,6 +1,6 @@
 # blender2ogre — Blender 5.2 adaptation
 
-Version 0.9.11, for Windows x64 and Blender 5.2.3 LTS.
+Version 0.9.12, for Windows x64 and Blender 5.2.3 LTS.
 
 This is a local compatibility adaptation of [OGRECave/blender2ogre](https://github.com/OGRECave/blender2ogre), retaining its `io_ogre` module name, upstream authors, and LGPL license. It is not an official upstream release.
 
@@ -32,6 +32,14 @@ The clean source and installer are self-contained. Development files remain outs
 - **Apply Modifiers** (`EX_APPLY_MODIFIERS`) controls evaluated geometry; it leaves source modifiers unchanged. **Only Write Node Keyframes** (`EX_NODE_KEYFRAMES`) exports authored key times and clip endpoints. Leave sparse sampling off for constraints, drivers, Bezier interpolation and procedural motion; the default samples every frame.
 - Meshes and rigs may have different translation, rotation and uniform positive scale at bind time. Skeletons are converted into mesh space. Shared Armature falls back to a separate skeleton when bind spaces differ; nonuniform/sheared relative bind transforms are rejected. Skeletal clips start at frame 0 on import. Weight trimming intentionally removes small influences; use a zero threshold when comparing exact deformation. Check receiving-engine limits on influences per vertex.
 - Use **Write Log file** when diagnosing material references or converter failures. The operation report lists missing dependencies or unsupported data. Invalid or unsuccessful operations return a cancelled result. Native conversion processes have a 120-second timeout.
+
+## Batch import
+
+In **File → Import → Ogre3D**, select several `.mesh`, `.mesh.xml` or `.scene` files with Ctrl/Shift and click **Import Ogre** once. Multi-file drag and drop uses the same importer. Referenced skeletons, material scripts and textures are loaded through each source file; do not select those dependencies as additional meshes.
+
+**Collection per Asset** is enabled by default. Each file gets a new collection named after its filename, with `.mesh.xml` treated as one extension and other dots retained. Existing same-named collections are preserved; Blender adds its normal unique suffixes to new ones. Scene node parenting, transforms, lights, cameras, imported rigs and their meshes stay together. Turn this option off to use the previous collection behavior.
+
+Each file imports independently. A failed file rolls back only its own new data, and the batch continues. The combined report names failed files and counts successful imports; successful objects remain selected. A partially successful batch finishes with a warning, while a batch with no successful files returns cancelled. **Use selected skeleton** consistently uses the armature active before the batch for every standalone mesh; that existing rig stays in its original collection. Generated import scripts retain every selected file, including quoted and Unicode filenames. One Undo removes the completed batch.
 
 ## Compatibility and limits
 

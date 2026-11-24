@@ -1,3 +1,9 @@
+# Blender 5.2 adaptation 0.9.12
+
+Adds batch import from the file browser and multi-file drag and drop. Select several meshes or scenes and import them in one operation. **Collection per Asset** is enabled by default, naming each new collection from its source file while retaining scene hierarchies and preserving existing collections. Disable it to keep the previous collection behavior.
+
+Each file has its own rollback boundary, so a failed asset is reported by filename while successful imports are retained and the batch continues. The combined report totals successful geometry and lists per-file results. All successful objects remain selected; the original selected armature can be reused consistently across standalone meshes. Import scripts record the complete batch safely, and the operator supports Undo as one operation. Adds eight installed-payload regressions for mixed binary/XML input, duplicate names, scene grouping, partial/all failures, selected-rig reuse, optional grouping and multi-file drop/script replay.
+
 # Blender 5.2 adaptation 0.9.11
 
 Names imported placeholder-material objects and their mesh datablocks after the source filename instead of `_missing_material_`, for example `Vegas19PART2Col.mesh` becomes `Vegas19PART2Col`. Handles binary/XML inputs, preserves dots in filenames and retains Blender's unique suffixes for separate parts or repeated imports. Other authored material names retain their existing naming behavior.

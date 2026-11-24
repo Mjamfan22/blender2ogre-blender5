@@ -1,9 +1,10 @@
 {
-  "version": "0.9.11",
+  "version": "0.9.12",
   "blender": "5.2.3 LTS",
   "assets": [
     {
       "mesh": "Allstar2019day2Fs",
+      "collection": "Allstar2019day2Fs",
       "object_name": "Allstar2019day2Fs",
       "mesh_data_name": "Allstar2019day2Fs",
       "vertices": 19901,
@@ -12,11 +13,11 @@
         "Allstar2019day2Fs": "Allstar2019day2Fs.png"
       },
       "warnings": [],
-      "errors": [],
-      "messages": []
+      "errors": []
     },
     {
       "mesh": "Allstar2019day2FsProps",
+      "collection": "Allstar2019day2FsProps",
       "object_name": "Allstar2019day2FsProps",
       "mesh_data_name": "Allstar2019day2FsProps",
       "vertices": 166764,
@@ -38,11 +39,11 @@
         "Allstartires": "CharlotteTires.png"
       },
       "warnings": [],
-      "errors": [],
-      "messages": []
+      "errors": []
     },
     {
       "mesh": "Vegas19PART2Col",
+      "collection": "Vegas19PART2Col",
       "object_name": "Vegas19PART2Col",
       "mesh_data_name": "Vegas19PART2Col",
       "vertices": 28117,
@@ -51,10 +52,7 @@
         "_missing_material_": null
       },
       "warnings": [],
-      "errors": [],
-      "messages": [
-        "Surface uses the exporter placeholder \"_missing_material_\": no source material or texture is assigned."
-      ]
+      "errors": []
     }
   ],
   "originals_unchanged": true,
@@ -64,7 +62,16 @@
     "day2bus2": "day2bus2.png",
     "Allstartires": "CharlotteTires.png"
   },
+  "batch_import": true,
+  "files_imported": 3,
+  "warnings": [],
+  "errors": [],
+  "messages": [
+    "Vegas19PART2Col.mesh: Surface uses the exporter placeholder \"_missing_material_\": no source material or texture is assigned."
+  ],
+  "vertices": 214782,
+  "triangles": 236412,
   "date": "2026-11-23",
   "installed_zip": true,
-  "installer_sha256": "154fc32b187700ae603beca9598ef570edb07ded4bfa576f8a1d5173971b4994"
+  "installer_sha256": "8230fd8757f0373ec9044de2d2e37cb3b0d75b6bbd296197a29b7f01a11eea3b"
 }

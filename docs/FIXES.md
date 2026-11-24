@@ -1,6 +1,14 @@
 # Fixes and improvements in this adaptation
 
-Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.11. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
+Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.12. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
+
+## Batch import and organization
+
+- Imported multiple meshes/scenes from one file-browser selection or multi-file drop, with optional filename-named collections enabled by default.
+- Retained scene hierarchies and grouped newly created meshes, rigs, cameras and lights without moving existing objects or reusing existing collections.
+- Committed files independently, rolled back failed files, continued the batch and combined successful totals with per-file diagnostics.
+- Selected all successful objects, reused the original selected armature consistently and recorded replayable scripts for the whole batch. Added operator Undo support.
+- Covered mixed binary/XML inputs, duplicate names, hierarchy/transforms, partial/all failures, selected-rig reuse, optional grouping and quoted script replay in eight installed-payload checks. See [the batch guide](BATCH_IMPORT.md).
 
 ## Blender 5 compatibility and installation
 
@@ -70,7 +78,7 @@ The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in th
 - Added current installation/upgrade instructions, material mapping and animation-authoring guidance; replaced the dead Meshmoon tutorial link and documented physics/Linux/OGRENext limits.
 - Retained the upstream project identity, full Git ancestry, author credits and LGPL licensing, along with unmodified tool binaries and their notices.
 - Added actual ZIP-install tests and numeric geometry/deformation comparisons.
-- Verified all 73 release checks in Blender 5.2.3 and provided a 65-check self-contained subset with explicit fixture skips.
+- Verified all 87 release checks in Blender 5.2.3 and provided a 79-check self-contained subset with eight explicit fixture skips.
 - Added CI for syntax, exact runtime hashes, deterministic package bytes and documentation links; made archive ordering consistent between Windows and Linux.
 - Organized development files into `tests/`, `tools/` and `docs/validation/`; local outputs and profiles are ignored under `.build/`.
 

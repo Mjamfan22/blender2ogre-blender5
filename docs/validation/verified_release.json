@@ -1,15 +1,15 @@
 {
-  "version": "0.9.11",
+  "version": "0.9.12",
   "blender": "5.2.3 LTS",
   "installed_zip": true,
-  "passed": 79,
+  "passed": 87,
   "failed": 0,
   "skipped": [],
   "full_suite": true,
   "date": "2026-11-23",
-  "sha256": "154fc32b187700ae603beca9598ef570edb07ded4bfa576f8a1d5173971b4994",
-  "bytes": 2264049,
-  "files": 59,
+  "sha256": "8230fd8757f0373ec9044de2d2e37cb3b0d75b6bbd296197a29b7f01a11eea3b",
+  "bytes": 2267377,
+  "files": 60,
   "tests": [
     {
       "test": "bundled_converter",
@@ -325,6 +325,38 @@
     },
     {
       "test": "full_bakugan_import_matches_previous_release",
+      "passed": true
+    },
+    {
+      "test": "batch_binary_xml_preserve_geometry_attributes_and_source_files",
+      "passed": true
+    },
+    {
+      "test": "batch_existing_and_duplicate_names_get_independent_collections",
+      "passed": true
+    },
+    {
+      "test": "batch_scenes_keep_hierarchy_cameras_lights_and_transforms",
+      "passed": true
+    },
+    {
+      "test": "batch_one_failure_rolls_back_only_that_file_and_continues",
+      "passed": true
+    },
+    {
+      "test": "batch_all_failed_preserves_existing_data_environment_and_selection",
+      "passed": true
+    },
+    {
+      "test": "batch_reuses_original_selected_skeleton_for_every_file",
+      "passed": true
+    },
+    {
+      "test": "batch_collection_option_can_keep_previous_root_linking",
+      "passed": true
+    },
+    {
+      "test": "batch_multi_file_drop_and_quoted_replay_script",
       "passed": true
     }
   ]

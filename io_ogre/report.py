@@ -29,10 +29,19 @@ class ReportSingleton(object):
         self.messages = []
         self.paths = []
         self.importing = False
+        self.import_results = []
 
     def report(self):
         r = ['Report:']
         ex = ['\nExtended Report:']
+        if len(self.import_results) > 1:
+            imported = sum(item['imported'] for item in self.import_results)
+            r.append('  Files: %s imported, %s failed' % (imported, len(self.import_results) - imported))
+            for item in self.import_results:
+                status = 'Imported' if item['imported'] else 'Failed'
+                ex.append('  %s: %s' % (status, item['file']))
+                if item['collection']:
+                    ex.append('    Collection: ' + item['collection'])
         if self.errors:
             r.append( '  ERRORS:' )
             for a in self.errors: r.append( '    - %s' %a )

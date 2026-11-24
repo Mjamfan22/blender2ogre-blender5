@@ -21,18 +21,18 @@ installed = Path(io_ogre.__file__).resolve().parent.parent
 assert installed.is_relative_to(ROOT / '.build/profile') and installed != ROOT
 assert '.'.join(map(str, io_ogre.bl_info['version'])) == manifest['version']
 
-for suite in ('workflow', 'release_suite', 'upstream_issues', 'material_resources', 'import_performance'):
+for suite in ('workflow', 'release_suite', 'upstream_issues', 'material_resources', 'import_performance', 'batch_import'):
     if suite == 'import_performance' and os.environ.get('OGRE_FULL_TESTS') == '1':
         sys.argv = [__file__, '--', str(installed), 'optimized']
         runpy.run_path(str(ROOT / 'tests/import_benchmark.py'), run_name='__main__')
     sys.argv = [__file__, '--', str(installed)]
     runpy.run_path(str(ROOT / 'tests' / (suite + '.py')), run_name='__main__')
 
-names = ('workflow_results', 'release_results', 'upstream_results', 'material_resources_results', 'import_performance_results')
+names = ('workflow_results', 'release_results', 'upstream_results', 'material_resources_results', 'import_performance_results', 'batch_import_results')
 results = [json.loads((ROOT / '.build/outputs' / (name + '.json')).read_text()) for name in names]
 tests = [test for result in results for test in result['tests']]
 full = os.environ.get('OGRE_FULL_TESTS') == '1'
-assert len(tests) == (79 if full else 71), len(tests)
+assert len(tests) == (87 if full else 79), len(tests)
 assert len(SKIPPED) == (0 if full else 8), SKIPPED
 assert all(test['passed'] for test in tests)
 record = {'version': manifest['version'], 'blender': bpy.app.version_string, 'installed_zip': True,

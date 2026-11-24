@@ -7,12 +7,13 @@ if "bpy" in locals():
 import bpy, os, getpass, math, mathutils, logging, datetime
 
 from pprint import pprint
-from bpy.props import EnumProperty, BoolProperty, FloatProperty, StringProperty, IntProperty
+from bpy.props import EnumProperty, BoolProperty, FloatProperty, StringProperty, IntProperty, CollectionProperty
 from .. import config
 from ..report import Report
 from ..util import *
 from ..xml import *
 from ..ogre import ogre_import
+from ..import_batch import selected_paths, import_script, import_paths
 
 logger = logging.getLogger('import')
 
@@ -55,7 +56,7 @@ class _OgreCommonImport_(object):
         This depends on setting ``options={'SKIP_SAVE'}`` to the property options to avoid
         to reuse filepath data between operator calls.
         """
-        if self.filepath:
+        if self.filepath or self.files:
             return self.execute(context)
 
         # Update the interface with the config values
@@ -89,7 +90,7 @@ class _OgreCommonImport_(object):
 
         # Options associated with each section
         section_options = {
-            "General" : ["IM_IMPORT_RESOURCE_PATH", "IM_V2_MESH_TOOL_VERSION"],
+            "General" : ["IM_IMPORT_INTO_COLLECTION", "IM_IMPORT_RESOURCE_PATH", "IM_V2_MESH_TOOL_VERSION"],
             "Armature" : ["IM_IMPORT_ANIMATIONS", "IM_ROUND_FRAMES", "IM_USE_SELECTED_SKELETON"], 
             "Mesh" : ["IM_IMPORT_NORMALS", "IM_MERGE_SUBMESHES"], 
             "Shape Keys" : ["IM_IMPORT_SHAPEKEYS"], 
@@ -114,19 +115,21 @@ class _OgreCommonImport_(object):
                     box.prop(self, prop)
 
     def execute(self, context):
-        """ Calls to this Operator can set unfiltered filepaths, ensure the file extension is .mesh, .xml or .scene. """
-        if not self.filepath or not (\
-           self.filepath.lower().endswith(".mesh") or \
-           self.filepath.lower().endswith(".xml") or \
-           self.filepath.lower().endswith(".scene")):
-            return {'CANCELLED'}
-
-        # Add warning about missing XML converter
+        """Import one filepath or every file selected in the browser/drop."""
         Report.reset()
-        if self.converter == "unknown":
-            Report.warnings.append(
-              "Cannot find suitable OgreXMLConverter or OgreMeshTool executable." +
-              "Import XML mesh - does NOT automatically convert .mesh to .xml file. You MUST run converter on the mesh manually.")
+        if not self.poll(context):
+            self.report({'WARNING'}, 'Switch to Object Mode before importing OGRE assets')
+            return {'CANCELLED'}
+        try:
+            paths = selected_paths(self.filepath, self.directory, self.files)
+        except ValueError as exc:
+            Report.errors.append(str(exc))
+            self.report({'WARNING'}, str(exc))
+            Report.show()
+            return {'CANCELLED'}
+        if not paths:
+            self.report({'WARNING'}, 'Choose one or more OGRE meshes or scenes')
+            return {'CANCELLED'}
 
         logger.debug("Context.blend_data: %s" % context.blend_data.filepath)
         logger.debug("Context.scene.name: %s" % context.scene.name)
@@ -158,10 +161,7 @@ class _OgreCommonImport_(object):
 
         print ("_" * 80,"\n")
 
-        script_text = "# Blender Import Script:\n\n"
-        script_text += "import bpy\n"
-        script_text += "bpy.ops.ogre.import_mesh(\n"
-        script_text += "  filepath='%s', \n" % os.path.abspath(self.filepath).replace('\\', '\\\\')
+        script_options = {}
         for name in dir(_OgreCommonImport_):
             conf_name = ""
             if name.startswith('IM_V1_') or \
@@ -175,11 +175,8 @@ class _OgreCommonImport_(object):
             attribute = getattr(self, name)
             kw[ conf_name ] = attribute
             if config._CONFIG_DEFAULTS_ALL[ conf_name ] != attribute:
-                if type(attribute) == str:
-                    script_text += "  %s='%s', \n" % (name, attribute)
-                else:
-                    script_text += "  %s=%s, \n" % (name, attribute)
-        script_text += ")\n"
+                script_options[name] = attribute
+        script_text = import_script(paths, script_options)
 
         print(script_text)
 
@@ -196,7 +193,7 @@ class _OgreCommonImport_(object):
 
         config.update(**kw)
 
-        target_path, target_file_name = os.path.split(os.path.abspath(self.filepath))
+        target_path, target_file_name = os.path.split(paths[0])
         # Preserve the source filename, including spaces and Unicode.
         target_file_name_no_ext = os.path.splitext(target_file_name)[0]
 
@@ -225,21 +222,12 @@ class _OgreCommonImport_(object):
         logger.info("Target_path: %s" % target_path)
         logger.info("Target_file_name: %s" % target_file_name)
 
-        Report.importing = True
-        from ..safety import ImportTransaction
-        result = {'CANCELLED'}
         try:
-            with ImportTransaction() as transaction:
-                if target_file_name.lower().endswith(".scene"):
-                    result = ogre_import.load_scene(os.path.join(target_path, target_file_name))
-                else:
-                    result = ogre_import.load_mesh(os.path.join(target_path, target_file_name))
-                if result == {'FINISHED'} and not Report.errors:
-                    transaction.commit()
-        except Exception as exc:
-            logger.exception('OGRE import failed')
-            Report.errors.append(str(exc))
-            self.report({'WARNING'}, 'OGRE import failed: ' + str(exc))
+            imported = import_paths(paths, self.IM_IMPORT_INTO_COLLECTION)
+            if self.converter == 'unknown':
+                Report.warnings.append('No compatible native converter found. XML imports are supported; binary .mesh imports require OgreXMLConverter or OgreMeshTool in add-on preferences.')
+            if imported < len(paths):
+                self.report({'WARNING'}, '%s of %s files imported; see the import report for failed files' % (imported, len(paths)))
         finally:
             if file_handler is not None:
                 for logger_name in list(logging.Logger.manager.loggerDict):
@@ -247,7 +235,7 @@ class _OgreCommonImport_(object):
                 file_handler.close()
         Report.show()
 
-        return result if result == {'FINISHED'} and not Report.errors else {'CANCELLED'}
+        return {'FINISHED'} if imported else {'CANCELLED'}
 
     filepath : StringProperty(name="File Path",
         description="Filepath used for importing Ogre .mesh and .scene files",
@@ -255,6 +243,10 @@ class _OgreCommonImport_(object):
         default="",
         options={'SKIP_SAVE'},
         subtype='FILE_PATH')
+
+    directory : StringProperty(subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+
+    files : CollectionProperty(type=bpy.types.OperatorFileListElement, options={'HIDDEN', 'SKIP_SAVE'})
 
     filter_glob : StringProperty(
             default="*.mesh;*.xml;*.scene;",
@@ -268,6 +260,10 @@ class _OgreCommonImport_(object):
     # IM_Vx_<config-name> for OgreXMLConverter and OgreMeshTool (hide only when no converter found)
 
     # General
+    IM_IMPORT_INTO_COLLECTION : BoolProperty(
+        name='Collection per Asset',
+        description='Put each imported file in a new collection named after its filename, keeping scene hierarchies together',
+        default=config.get('IMPORT_INTO_COLLECTION')) = {}
     IM_IMPORT_RESOURCE_PATH : StringProperty(
         name='Resource Folder',
         description='Optional folder containing shared material scripts and textures. Nearby recognized asset packs are found automatically',
@@ -355,7 +351,7 @@ class OP_ogre_import(bpy.types.Operator, _OgreCommonImport_):
     '''Import Ogre Scene'''
     bl_idname = "ogre.import_mesh"
     bl_label = "Import Ogre"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
     # import logic is contained in the subclass
 
     def __init__(self, *args, **kwargs):

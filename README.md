@@ -317,6 +317,7 @@ Additionally, the following companies have supported/sponsored the development e
 
 ## Our fixes and improvements
 
+- **Batch import:** select several meshes or scenes in one file browser, or drop several files together. Each asset gets a filename-named collection; failed files roll back independently and the combined report lists their results. [Batch import guide](docs/BATCH_IMPORT.md).
 - **Blender 5 support:** updated action-slot handling, named animation clips, operator initialization, registration/cleanup and installation.
 - **Faster imports:** replaced expensive XML DOM searches, transferred mesh arrays in bulk and reused shared static vertex buffers. The measured example improved from **39.0 to 7.7 seconds**, retaining all triangles, eight UV layers, normals and materials. Results vary by model and computer.
 - **Shared materials and textures:** added resource-pack discovery, an optional Resource Folder setting, shared material definitions and textures, imports, variables, inheritance, abstract templates and named overrides.
@@ -328,6 +329,6 @@ Additionally, the following companies have supported/sponsored the development e
 - **Export controls:** fixed Selected Only through hierarchies and merge collections; added Resource Prefix, Apply Modifiers and optional sparse node-key sampling.
 - **File protection:** isolated native conversion, preserved source XML, added import rollback and staged export, and restored selection, modifiers, rig visibility, action slots and timeline state after operations.
 - **Tools and diagnostics:** bundled the compatible Windows tools and license notices, repaired missing bundled/default paths, added process timeouts and configuration validation, and throttled excessive progress updates.
-- **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **79 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
+- **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **87 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
 
 [Complete fixes and improvements](docs/FIXES.md) · [Version-by-version patch notes](CHANGELOG.md) · [Release downloads and documentation](docs/RELEASES.md) · [Upstream issue audit](docs/UPSTREAM_ISSUES.md) · [Validation](docs/VALIDATION.md)

@@ -106,6 +106,7 @@ _CONFIG_DEFAULTS_ALL = {
 
     # Import
     'IMPORT_RESOURCE_PATH' : '',
+    'IMPORT_INTO_COLLECTION' : True,
     'IMPORT_XML_DELETE' : False,
     'IMPORT_NORMALS' : True,
     'MERGE_SUBMESHES' : True,
