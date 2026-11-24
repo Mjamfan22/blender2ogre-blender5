@@ -174,7 +174,8 @@ def xOpenFile(filename):
 
     xml_file = open(filename, encoding='utf-8-sig')
     try:
-        xml_doc = minidom.parse(xml_file)
+        from .fast_xml import parse
+        xml_doc = parse(xml_file)
         output = xml_doc
     except Exception:
         logger.error("File %s is not valid XML!" % filename)
@@ -268,6 +269,9 @@ def xCollectVertexData(data):
 
 def xCollectMeshData(meshData, xmldoc, meshname, dirname):
     logger.info("* Collecting mesh data...")
+    from .fast_xml import Document, collect_mesh
+    if isinstance(xmldoc, Document):
+        return collect_mesh(meshData, xmldoc, GetValidBlenderName, config.get('IMPORT_NORMALS'))
     
     #global has_skeleton
     faceslist = []
@@ -940,9 +944,41 @@ def bMergeVertices(subMesh):
             face[i] = map[face[i]]
 
 
+def append_material(ob, meshData, subMeshData):
+    """Reuse one material per source name throughout a single import."""
+    name = subMeshData['material']
+    key = subMeshData.get('materialOrig',name)
+    cache = meshData.setdefault('_blender_materials',{})
+    if key not in cache:
+        if key in meshData['materials']:
+            from .material_import import create_material
+            cache[key] = create_material(name,meshData['materials'][key])
+            if name not in Report.materials:
+                Report.materials.append(name)
+        else:
+            logger.warning('Definition of material: "%s" not found!',name)
+            Report.warnings.append('Definition of material: "%s" not found!' % name)
+            cache[key] = bpy.data.materials.new(name=name)
+    material = cache[key]
+    index = ob.data.materials.find(material.name)
+    if index < 0:
+        index = len(ob.data.materials)
+        ob.data.materials.append(material)
+    return index
+
+
 def bCreateSubMeshes(meshData, meshName):
+    import numpy as np
     allObjects = []
     submeshes = meshData['submeshes']
+    # Static submeshes with shared geometry can use one vertex buffer directly.
+    # Rig and morph imports retain their established topology/animation path.
+    shared_merge = (config.get('MERGE_SUBMESHES') and len(submeshes)>1 and
+        'sharedgeometry' in meshData and all('geometry' not in sub for sub in submeshes) and
+        not any(key in meshData for key in ('boneIDs','skeleton','armature','poses')))
+    original_submeshes = submeshes
+    if shared_merge:
+        submeshes = [dict(submeshes[0],faces=[face for sub in submeshes for face in sub['faces']])]
     scene = bpy.context.scene
     layer = bpy.context.view_layer
 
@@ -951,8 +987,9 @@ def bCreateSubMeshes(meshData, meshName):
         subMeshName = subMeshData['material']
 
         # Create mesh and object
-        me = bpy.data.meshes.new(subMeshName)
-        ob = bpy.data.objects.new(subMeshName, me)
+        object_name = meshName if shared_merge else subMeshName
+        me = bpy.data.meshes.new(object_name)
+        ob = bpy.data.objects.new(object_name, me)
 
         # Link object to scene
         scene.collection.objects.link(ob)
@@ -980,50 +1017,27 @@ def bCreateSubMeshes(meshData, meshName):
         me.loops.add(FaceLength * 3)
         me.polygons.add(FaceLength)
 
-        me.vertices.foreach_set("co", unpack_list(verts))
-
-        if hasNormals:
-            me.vertices.foreach_set("normal", unpack_list(normals))
-
-        me.polygons.foreach_set("loop_start", [i for i in range(0, FaceLength * 3, 3)])
-        me.polygons.foreach_set("loop_total", [3] * (FaceLength))
-        me.loops.foreach_set("vertex_index", unpack_list(faces))
+        me.vertices.foreach_set('co',np.asarray(verts,dtype='f').ravel())
+        loop_vertices = np.asarray(faces,dtype='i').ravel()
+        me.polygons.foreach_set('loop_start',np.arange(0,FaceLength*3,3,dtype='i'))
+        me.polygons.foreach_set('loop_total',np.full(FaceLength,3,dtype='i'))
+        me.loops.foreach_set('vertex_index',loop_vertices)
 
         hasTexture = False
         # Material for the submesh
         # Create image texture from image.
-        material_key = subMeshData.get('materialOrig', subMeshName)
-        if material_key in meshData['materials']:
-            matInfo = meshData['materials'][material_key]	# material data
-            if subMeshName not in Report.materials:
-                Report.materials.append(subMeshName)
-
-            from .material_import import create_material
-            cache = meshData.setdefault('_blender_materials', {})
-            if subMeshName not in cache:
-                cache[subMeshName] = create_material(subMeshName, matInfo)
-            mat = cache[subMeshName]
-
-            # Add material to object
-            ob.data.materials.append(mat)
-            #logger.debug(me.uv_textures[0].data.values()[0].image)
+        if shared_merge:
+            slots = [np.full(len(sub['faces']),append_material(ob,meshData,sub),dtype='i') for sub in original_submeshes]
+            me.polygons.foreach_set('material_index',np.concatenate(slots))
         else:
-            logger.warning("Definition of material: \"%s\" not found!" % subMeshName)
-            Report.warnings.append("Definition of material: \"%s\" not found!" % subMeshName)
-            # create default material if it could not be imported to preserve submesh material reference
-            mat = bpy.data.materials.new(name=subMeshName)
-            ob.data.materials.append(mat)
+            append_material(ob,meshData,subMeshData)
 
         # Texture coordinates
         if 'texcoordsets' in geometry and 'uvsets' in geometry:
-            uvsets = geometry['uvsets']
+            uvsets = np.asarray(geometry['uvsets'],dtype='f')
             for j in range(geometry['texcoordsets']):
                 uvData = me.uv_layers.new(name='UVLayer'+str(j)).data
-                loopIndex = 0
-                for face in faces:
-                    for v in face:
-                        uvData[loopIndex].uv = uvsets[v][j]
-                        loopIndex += 1
+                uvData.foreach_set('uv',uvsets[loop_vertices,j,:].ravel())
 
         # Vertex colors
         if 'vertexcolors' in geometry and len(geometry['vertexcolors']) > 0:
@@ -1033,12 +1047,8 @@ def bCreateSubMeshes(meshData, meshName):
             else:
                 colourData = me.vertex_colors.new(name='Color').data
 
-            vcolors = geometry['vertexcolors']
-            loopIndex = 0
-            for face in faces:
-                for v in face:
-                    colourData[loopIndex].color = vcolors[v]
-                    loopIndex += 1
+            vcolors = np.asarray(geometry['vertexcolors'],dtype='f')
+            colourData.foreach_set('color',vcolors[loop_vertices].ravel())
 
         # Bone assignments:
         if 'boneIDs' in meshData:
@@ -1248,6 +1258,10 @@ def _load_mesh(filepath, workdir):
         
         if config.get('IMPORT_SHAPEKEYS') is True:
             xCollectPoseData(meshData, xDocMeshData)
+
+        # Geometry and animation channels are plain arrays now. Release the
+        # large XML tree before allocating Blender's mesh buffers.
+        xDocMeshData.unlink()
 
         # After collecting is done, start creating stuff#
         # Create skeleton (if any) and mesh from parsed data

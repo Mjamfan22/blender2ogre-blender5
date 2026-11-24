@@ -1,11 +1,11 @@
 {
-  "version": "0.9.6",
-  "sha256": "f460402833357bf074f664968e9214b3f72f737df1d64e7af34976914d88dfa2",
-  "bytes": 2259619,
+  "version": "0.9.7",
+  "sha256": "65fd135d0dfe569fe8dc4dd73d50a59cdefe2676f60c8138c1d560230dfea546",
+  "bytes": 2262332,
   "blender": "5.2.3 LTS",
   "blender_build_hash": "e13b728c6880",
   "installed_zip": true,
-  "tests_passed": 68,
+  "tests_passed": 73,
   "tests_failed": 0,
   "tests_skipped": 0,
   "verification_provenance": "Preserved verification of this exact historical installed ZIP; publication rechecks hashes, source equality and archive integrity without claiming a new Blender test run.",
@@ -78,10 +78,15 @@
     "quoted_named_pass_overrides_keep_inherited_texture",
     "standalone_lookup_stays_within_its_asset_folder",
     "inherited_alpha_rejection_preserves_image_alpha",
-    "reported_bakugan_body_imports_all_three_base_textures"
+    "reported_bakugan_body_imports_all_three_base_textures",
+    "shared_static_geometry_keeps_bulk_corner_attributes",
+    "keep_submeshes_separate_still_works",
+    "skeletal_shared_mesh_keeps_weights_and_rig",
+    "multiple_vertex_buffers_and_declared_counts",
+    "full_bakugan_import_matches_previous_release"
   ],
   "runtime_sha256": {
-    "io_ogre/__init__.py": "986b6b77d8c02506248771a22bef0f1d4fe8e7aec743f68f654c635021a670c1",
+    "io_ogre/__init__.py": "0459e67ce294b02ee8e8b0b80e6723c09104f23659cb45755992a05b373f7e01",
     "io_ogre/animation.py": "4288080032341ebab7d251c073e3a6a621f434b2730c371cdd8c459374155c72",
     "io_ogre/api.py": "fc110c7836b914b09fed7c6bf54ae87a85e409999220a7aad2eb66d8be8a1fd8",
     "io_ogre/CHANGELOG.txt": "0ba0d8feacc1ca36d7d101941a1e560256d2b34c288676d0ffc0bd7325f762df",
@@ -95,6 +100,7 @@
     "io_ogre/Modifiers.md": "dc3cb2ff7af1f6da5e60bbb2da6a9253293af9aa67cf9359ec54a733a88e0712",
     "io_ogre/NodeAnimations.md": "c1984b8b68ed3f68666a222f5ee5d8f40c95ce17a59fdfc9e4f830bede845c3f",
     "io_ogre/ogre/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "io_ogre/ogre/fast_xml.py": "93986ded4048d46d2bc9ebc3f29b04879dd26974e003ddae02a2b0ab6dbbfae4",
     "io_ogre/ogre/material.py": "56ca0628c7508c12bc1f9b64d4356defe9f5f2df9401ae04b99265758f760ef0",
     "io_ogre/ogre/material_import.py": "c1d9b1b784111069f6452ca6f3c7a6d9fe9738f9de75f8498d23e6f4f9838102",
     "io_ogre/ogre/material_parser.py": "583b02b8a707bb270f0bfc1883d19cc62f9347d59d281090bf905f759d15333a",
@@ -104,7 +110,7 @@
     "io_ogre/ogre/materialv2json.py": "42aaeab45940ee155c05a2001c38574f19fe4073823193a92ea84b62096960b8",
     "io_ogre/ogre/mesh.py": "3d4ec91de4d722135cebfb2a53b0a2378bc35767abf73d38caa542aa9d974590",
     "io_ogre/ogre/node_anim.py": "c18834e818364d13c9e402f252307ac0a762f3c7cbfa53b2e69947a4475c280d",
-    "io_ogre/ogre/ogre_import.py": "7b729d449b3c410ce17787caf8b904ee5e511308368ce2506c32abbbe88762dc",
+    "io_ogre/ogre/ogre_import.py": "1889a5ed9347cafa060597f99260b185d6cc81324e718e64549e10e0f3c95d1d",
     "io_ogre/ogre/program.py": "9595108167913c8bbf95c8f295879e245fdb866b0960d88f96d8aee093781476",
     "io_ogre/ogre/resource_index.py": "a5ceb5ac61f1c00c908eb4ac6d460f2a0c24613c86a3870cf231ecc52652e6ef",
     "io_ogre/ogre/scene.py": "cfa202c7f951e2c4b2259a08594387b900dec36e857197baf207b9a22931b8aa",
@@ -116,8 +122,8 @@
     "io_ogre/ParticleSystem.md": "78c63f6262c261decb7f07728f0c2e3267c4eb79376da81ce5683c70211e5693",
     "io_ogre/Physics.md": "5537ef8b580c331a518c644ff9d583766d8124f63412b9f23861e1b954cd8698",
     "io_ogre/properties.py": "31b5c5234b2528e91d38d571ad4aa02ca37010266602ab0f3a0347fb67a12b67",
-    "io_ogre/README.md": "4347b574e60c6433a38136ba08bb5fb8f535de6bb459890c5d2fddb373e2ed8e",
-    "io_ogre/RELEASE_NOTES.md": "ed0d6d22d029b39fd7bab573b16c233dc722197f8581793877621a154e03de0b",
+    "io_ogre/README.md": "5723c1ece61bef3f56e94acb6091d2441db15b297c88762e665d44c1578bc514",
+    "io_ogre/RELEASE_NOTES.md": "4cddf640bbd2f136429371b01f76c1e46059f015d035089dd7cd1db5ddbd5083",
     "io_ogre/report.py": "21b3093cb451d101cedb52391f3fa8ad6d1dfc25ae8e19960c103ccc4a933f9e",
     "io_ogre/safety.py": "74008a6a56c0ae4c03da0fbb883d7e7421ef2cc1965c725d0f854c5309efac77",
     "io_ogre/shader.py": "e4275a71fb3ffc8fb1adb8fc203c4394ae1e7e4424bc9e1f8addc0c47844b3a1",
@@ -140,5 +146,5 @@
     "io_ogre/VertexColors.md": "17295206ec489ee79cc90ebabba2cb815dd164dbe38c0302b21ba80bfd6239ea",
     "io_ogre/xml.py": "447e1cfc7bf4558bf0807de018725cff54c94b58316b268ca599ac05b8a3af1c"
   },
-  "files": 58
+  "files": 59
 }

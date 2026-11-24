@@ -1,3 +1,14 @@
+# Blender 5.2 adaptation 0.9.7
+
+Speeds up import without reducing geometry or texture quality. The 190,826-triangle Bakugan body imported in about 8 seconds versus 39 seconds in the previous release on the test computer. Timings vary by asset and hardware.
+
+- Replaces the mesh XML DOM reader with ElementTree and collects vertex attributes and faces directly, avoiding repeated recursive searches. Releases the XML tree before constructing the Blender mesh.
+- Transfers positions, polygon indices, UV layers and vertex colors through contiguous bulk arrays using Blender's bundled NumPy.
+- Builds merged static shared-geometry submeshes directly in one mesh, retaining one source vertex buffer and per-face materials. Animated meshes and separate-submesh imports retain their established behavior.
+- Reuses imported materials within a single import.
+
+Adds five import regressions. All 73 checks run from the independently installed release ZIP. The complete Bakugan comparison checks every triangle corner's positions, custom normals, all eight UV layers and material assignment against the previous release. No differences were found; the shared vertex buffer contains 121,422 vertices instead of three duplicated copies.
+
 # Blender 5.2 adaptation 0.9.6
 
 Fixes the missing shared materials reported while importing the Bakugan Dragonoid body from a Rigs of Rods/Sim-Monsters pack.

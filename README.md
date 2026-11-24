@@ -314,6 +314,6 @@ So that there is no overlap with other developers or the overall roadmap.
 Additionally, the following companies have supported/sponsored the development efforts.
 * [Adminotech Ltd.](http://www.meshmoon.com/)
 
-## Blender 5.2 adaptation v0.9.6
+## Blender 5.2 adaptation v0.9.7
 
-This is an archival source snapshot of the verified v0.9.6 adaptation. See [release notes](docs/releases/v0.9.6.md) and [the runtime guide](io_ogre/README.md).
+This is an archival source snapshot of the verified v0.9.7 adaptation. See [release notes](docs/releases/v0.9.7.md) and [the runtime guide](io_ogre/README.md).
