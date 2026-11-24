@@ -22,10 +22,10 @@ On Windows x64 with Blender 5.2.3 LTS installed:
 python tools/run_checks.py --blender "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 ```
 
-The runner builds the deterministic ZIP, installs it using Blender's real legacy add-on installer in a disposable profile, and runs the **68 synthetic checks**. It does not use the live Blender's preferences or scene. Results are written under `.build/outputs`; eight fixture-dependent checks are explicitly skipped.
+The runner builds the deterministic ZIP, installs it using Blender's real legacy add-on installer in a disposable profile, and runs the **70 synthetic checks**. It does not use the live Blender's preferences or scene. Results are written under `.build/outputs`; eight fixture-dependent checks are explicitly skipped.
 
 For the complete suite, supply the non-redistributed fixtures described in `tests/fixtures/README.md`, then add `--full`. That run includes the real-asset benchmark and baseline comparison. A missing fixture in full mode is an error. The fixture files and comparison snapshots stay ignored by Git.
 
-Source-only runs, static CI and synthetic subsets must not be described as the complete installed-payload release verification. The included sanitized evidence records the actual 76-check release run separately.
+Source-only runs, static CI and synthetic subsets must not be described as the complete installed-payload release verification. The included sanitized evidence records the actual 78-check release run separately.
 
 Use factory-startup background Blender processes and scratch exports. Preserve source .mesh/.xml files, existing textures/materials and live editing state. Test rollback and round-trip correctness when changes affect those paths. Do not upload local model packs, caches, profiles, credentials or machine-specific logs.

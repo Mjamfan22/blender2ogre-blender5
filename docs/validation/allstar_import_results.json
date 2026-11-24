@@ -1,5 +1,5 @@
 {
-  "version": "0.9.9",
+  "version": "0.9.10",
   "blender": "5.2.3 LTS",
   "assets": [
     {
@@ -10,7 +10,8 @@
         "Allstar2019day2Fs": "Allstar2019day2Fs.png"
       },
       "warnings": [],
-      "errors": []
+      "errors": [],
+      "messages": []
     },
     {
       "mesh": "Allstar2019day2FsProps",
@@ -33,7 +34,21 @@
         "Allstartires": "CharlotteTires.png"
       },
       "warnings": [],
-      "errors": []
+      "errors": [],
+      "messages": []
+    },
+    {
+      "mesh": "Vegas19PART2Col",
+      "vertices": 28117,
+      "triangles": 20464,
+      "materials": {
+        "_missing_material_": null
+      },
+      "warnings": [],
+      "errors": [],
+      "messages": [
+        "Surface uses the exporter placeholder \"_missing_material_\": no source material or texture is assigned."
+      ]
     }
   ],
   "originals_unchanged": true,
@@ -45,5 +60,5 @@
   },
   "date": "2026-11-23",
   "installed_zip": true,
-  "installer_sha256": "7dfc4177d798f412f509e0b0b59b2a7acbc20f200ee0e0025c5168bbe3a52428"
+  "installer_sha256": "68a6cc1394cc56e49ee27bd2feecfdd3643420fc8dc654f5cfa1c48ebf8d0d3d"
 }

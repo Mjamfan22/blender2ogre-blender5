@@ -204,6 +204,8 @@ class MaterialResolver:
         def ready():
             try:
                 for name in names:
+                    if name == '_missing_material_' and name not in self.definitions:
+                        continue
                     self.resolve(name)
                 return True
             except ValueError:

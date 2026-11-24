@@ -1,0 +1,49 @@
+{
+  "version": "0.9.9",
+  "blender": "5.2.3 LTS",
+  "assets": [
+    {
+      "mesh": "Allstar2019day2Fs",
+      "vertices": 19901,
+      "triangles": 38616,
+      "materials": {
+        "Allstar2019day2Fs": "Allstar2019day2Fs.png"
+      },
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "mesh": "Allstar2019day2FsProps",
+      "vertices": 166764,
+      "triangles": 177332,
+      "materials": {
+        "BlueTaurus": "BlueTaurus.png",
+        "BlueCars": "BlueCars.png",
+        "tires.001": "Tire.png",
+        "tires2.001": "Tire2.png",
+        "AllstarTBox.001": "AllstarTBox.png",
+        "Allstarbus2.001": "Allstarbus2.png",
+        "Allstarbus1.001": "Allstarbus1.png",
+        "OrangeCars": "OrangeCars.png",
+        "OrangeTaurus": "OrangeTaurus.png",
+        "OrangeTbox": "OrangeTBOX.png",
+        "GreenTbox": "GreenTbox.png",
+        "day2bus": "day2bus.png",
+        "day2bus2": "day2bus2.png",
+        "Allstartires": "CharlotteTires.png"
+      },
+      "warnings": [],
+      "errors": []
+    }
+  ],
+  "originals_unchanged": true,
+  "reported_materials_verified": {
+    "Allstar2019day2Fs": "Allstar2019day2Fs.png",
+    "day2bus": "day2bus.png",
+    "day2bus2": "day2bus2.png",
+    "Allstartires": "CharlotteTires.png"
+  },
+  "date": "2026-11-23",
+  "installed_zip": true,
+  "installer_sha256": "7dfc4177d798f412f509e0b0b59b2a7acbc20f200ee0e0025c5168bbe3a52428"
+}

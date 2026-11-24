@@ -7,6 +7,11 @@ from ..report import Report
 def create_material(name, info):
     # Never overwrite a pre-existing material just because names match.
     material = bpy.data.materials.new(name or 'OgreMaterial')
+    if info.get('placeholder'):
+        material['ogre_placeholder'] = True
+        message = 'Surface uses the exporter placeholder "_missing_material_": no source material or texture is assigned.'
+        if message not in Report.messages:
+            Report.messages.append(message)
     material.use_nodes = True
     nodes = material.node_tree.nodes
     shader = next(node for node in nodes if node.type == 'BSDF_PRINCIPLED')

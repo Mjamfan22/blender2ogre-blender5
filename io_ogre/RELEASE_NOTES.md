@@ -1,3 +1,7 @@
+# Blender 5.2 adaptation 0.9.10
+
+Recognizes the exporter's reserved `_missing_material_` name as an unassigned surface when no material definition is supplied. Collision meshes retain a neutral placeholder with one informational message instead of two misleading missing-parent/definition warnings. Supplied definitions and genuine missing-resource diagnostics are preserved. Adds two regression checks for the placeholder import and definition precedence.
+
 # Blender 5.2 adaptation 0.9.9
 
 Restores the track, bus and tire textures on older Allstar/Rigs of Rods assets that import a game-supplied `managed_mats.material` script. Known simple `RoR/Managed_Mats/Base` and `BaseNoShadows` parents retain the child's explicit surface data when the script is absent. Supplied base definitions take precedence. Unknown parents and missing images are still reported; game shadow shaders are not recreated.

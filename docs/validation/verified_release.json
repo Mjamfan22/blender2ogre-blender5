@@ -1,14 +1,14 @@
 {
-  "version": "0.9.9",
+  "version": "0.9.10",
   "blender": "5.2.3 LTS",
   "installed_zip": true,
-  "passed": 76,
+  "passed": 78,
   "failed": 0,
   "skipped": [],
   "full_suite": true,
   "date": "2026-11-23",
-  "sha256": "7dfc4177d798f412f509e0b0b59b2a7acbc20f200ee0e0025c5168bbe3a52428",
-  "bytes": 2263294,
+  "sha256": "68a6cc1394cc56e49ee27bd2feecfdd3643420fc8dc654f5cfa1c48ebf8d0d3d",
+  "bytes": 2263791,
   "files": 59,
   "tests": [
     {
@@ -245,6 +245,14 @@
     },
     {
       "test": "issue142_reporter_animated_character_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "exporter_placeholder_import_is_informational_and_keeps_geometry",
+      "passed": true
+    },
+    {
+      "test": "supplied_placeholder_definition_is_preserved_and_missing_names_warn",
       "passed": true
     },
     {

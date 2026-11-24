@@ -40,6 +40,41 @@ def read(file):
     data={}; MaterialParser.xParseMaterial(data,str(file),str(file.parent)); return data
 
 @case
+def exporter_placeholder_import_is_informational_and_keeps_geometry():
+    folder=OUT/'placeholder_mesh'
+    file=write(folder/'collision.mesh.xml','''<mesh>
+<sharedgeometry vertexcount="3"><vertexbuffer positions="true">
+<vertex><position x="0" y="0" z="0"/></vertex>
+<vertex><position x="1" y="0" z="0"/></vertex>
+<vertex><position x="0" y="1" z="0"/></vertex>
+</vertexbuffer></sharedgeometry>
+<submeshes><submesh material="_missing_material_" usesharedvertices="true" operationtype="triangle_list">
+<faces count="1"><face v1="0" v2="1" v3="2"/></faces>
+</submesh></submeshes></mesh>''')
+    result=bpy.ops.ogre.import_mesh(filepath=str(file),IM_USE_SELECTED_SKELETON=False,IM_Vx_ENABLE_LOGGING=False)
+    assert result=={'FINISHED'},Report.errors
+    obj=next(o for o in bpy.context.scene.objects if o.type=='MESH')
+    assert len(obj.data.vertices)==3 and len(obj.data.polygons)==1
+    assert len(obj.data.materials)==1
+    assert obj.data.materials[0]['ogre_placeholder'] is True
+    assert not any(n.type=='TEX_IMAGE' for n in obj.data.materials[0].node_tree.nodes)
+    assert not Report.warnings and not Report.errors,(Report.warnings,Report.errors)
+    assert len(Report.messages)==1 and 'no source material or texture' in Report.messages[0],Report.messages
+
+@case
+def supplied_placeholder_definition_is_preserved_and_missing_names_warn():
+    from io_ogre.ogre.material_reader import read_materials
+    folder=OUT/'placeholder_definition'
+    file=write(folder/'local.material','material _missing_material_ { technique { pass { diffuse 0.1 0.2 0.3 1 } } }')
+    resolver=MaterialResolver(folder); resolver.load(file)
+    info=read_materials(resolver,{'_missing_material_'})['_missing_material_']
+    assert info['diffuse']==[.1,.2,.3,1] and not info.get('placeholder'),info
+    Report.reset()
+    resolver=MaterialResolver(OUT/'unknown_placeholder')
+    assert read_materials(resolver,{'_missing_material_custom_'})=={}
+    assert any('Missing parent material' in w for w in Report.warnings),Report.warnings
+
+@case
 def ror_managed_base_recovers_reported_track_bus_and_tire_textures():
     folder=OUT/'managed_track'
     expected={'Allstar2019day2Fs':'track.png','day2bus':'bus.png',

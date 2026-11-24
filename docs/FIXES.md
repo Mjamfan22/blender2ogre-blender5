@@ -1,6 +1,6 @@
 # Fixes and improvements in this adaptation
 
-Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.9. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
+Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.10. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
 
 ## Blender 5 compatibility and installation
 
@@ -25,6 +25,8 @@ Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`
 The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in the documented fresh-process comparison. All eight UV layers, custom normals and material assignments matched at every triangle corner. The 121,422 source vertices replace three duplicated buffers, with no triangle decimation or welding of distinct source vertices. [Measurement conditions](VALIDATION.md).
 
 ## Materials and images
+
+- Recognized the reserved unassigned-surface placeholder with an informational message instead of misleading missing-parent/definition warnings, while preserving supplied definitions and genuine missing-resource warnings.
 
 - Recovered explicit track, bus and tire textures on legacy RoR assets that omit the game-supplied `managed_mats.material` script, using the known simple Base/BaseNoShadows compatibility path while preserving real overrides and missing-resource diagnostics.
 - Found recognized nearby asset-pack roots and shared script/texture subdirectories, with an optional Resource Folder control for other layouts.

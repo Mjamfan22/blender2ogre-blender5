@@ -8,6 +8,11 @@ def read_materials(resolver, names=None):
     for name in names:
         if name in resolver.abstract:
             continue
+        if name == '_missing_material_' and name not in resolver.definitions:
+            # The exporter reserves this name for an unassigned surface. It is
+            # not a missing parent, and there is no texture to reconstruct.
+            materials[name] = {'placeholder': True}
+            continue
         try:
             nodes = resolver.substitute(resolver.resolve(name), resolver.globals)
         except ValueError as error:

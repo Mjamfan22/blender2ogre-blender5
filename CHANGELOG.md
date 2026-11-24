@@ -1,3 +1,11 @@
+# Blender 5.2 adaptation 0.9.10
+
+Fixes misleading material warnings on collision meshes such as `Vegas19PART2Col.mesh` that use the exporter's reserved `_missing_material_` name without a material script definition.
+
+- Preserves a neutral, explicitly marked placeholder and explains the unassigned surface once under Messages, instead of reporting it as a missing parent and then a missing definition.
+- Keeps supplied placeholder definitions and genuine missing-material/parent/texture diagnostics. Does not invent a texture for collision geometry.
+- Adds two regressions for placeholder imports, geometry preservation, supplied-definition precedence and ordinary missing names.
+
 # Blender 5.2 adaptation 0.9.9
 
 Fixes missing track, bus and tire textures on older Allstar/Rigs of Rods imports whose `managed_mats.material` dependency is supplied by the game instead of the asset archive.

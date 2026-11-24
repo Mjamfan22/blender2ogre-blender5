@@ -32,7 +32,7 @@ names = ('workflow_results', 'release_results', 'upstream_results', 'material_re
 results = [json.loads((ROOT / '.build/outputs' / (name + '.json')).read_text()) for name in names]
 tests = [test for result in results for test in result['tests']]
 full = os.environ.get('OGRE_FULL_TESTS') == '1'
-assert len(tests) == (76 if full else 68), len(tests)
+assert len(tests) == (78 if full else 70), len(tests)
 assert len(SKIPPED) == (0 if full else 8), SKIPPED
 assert all(test['passed'] for test in tests)
 record = {'version': manifest['version'], 'blender': bpy.app.version_string, 'installed_zip': True,
