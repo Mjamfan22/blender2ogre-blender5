@@ -1,3 +1,9 @@
+# Blender 5.2 adaptation 0.9.9
+
+Restores the track, bus and tire textures on older Allstar/Rigs of Rods assets that import a game-supplied `managed_mats.material` script. Known simple `RoR/Managed_Mats/Base` and `BaseNoShadows` parents retain the child's explicit surface data when the script is absent. Supplied base definitions take precedence. Unknown parents and missing images are still reported; game shadow shaders are not recreated.
+
+Adds three regression checks for this material compatibility path. Source asset files are not modified.
+
 # Blender 5.2 adaptation 0.9.8
 
 Prepares the existing fixes for private GitHub review. Runtime import/export behavior is unchanged from 0.9.7.

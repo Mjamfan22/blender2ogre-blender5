@@ -1,10 +1,10 @@
 # Review guide
 
-The review build is **v0.9.8**. Compared with v0.9.7, its runtime behavior is unchanged: only version/installation documentation and a stale third-party notice were corrected. This repository also adds review documentation, images, portable checks and sanitized release evidence.
+The review build is **v0.9.9**. It restores explicit track, bus and tire textures on older RoR assets that omit the game's simple managed-material base. The previous v0.9.8 build retained v0.9.7 runtime behavior. This repository also adds review documentation, original upstream images, portable checks and sanitized release evidence.
 
 The README restores the actual upstream sections and their original images, followed by [our complete fixes and improvements](FIXES.md). Development files use the standard layout described in [LAYOUT.md](LAYOUT.md).
 
-1. Read [the patch notes](../CHANGELOG.md) for the full progression from 0.9.4 to 0.9.8.
+1. Read [the patch notes](../CHANGELOG.md) for the full progression from 0.9.4 to 0.9.9.
 2. Review the draft PR comparing `main` with `upstream/master`. The latter is the exact original adaptation baseline; it is a comparison reference. Leave the PR in draft while reviewing.
 3. Repository maintainers can download the draft release ZIP; public visitors can build the same installer as described in [installation](INSTALLATION.md). Compare its SHA-256 with [the validation record](../docs/validation/runtime_manifest.json). Install the ZIP, not the repository's source archive.
 4. In a disposable Blender scene, import a mesh, inspect its normals/UVs/materials, preview its animation if present, then export and re-import a copy. Save existing work before restarting Blender.

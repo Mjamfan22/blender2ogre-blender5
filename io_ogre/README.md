@@ -1,6 +1,6 @@
 # blender2ogre — Blender 5.2 adaptation
 
-Version 0.9.8, for Windows x64 and Blender 5.2.3 LTS.
+Version 0.9.9, for Windows x64 and Blender 5.2.3 LTS.
 
 This is a local compatibility adaptation of [OGRECave/blender2ogre](https://github.com/OGRECave/blender2ogre), retaining its `io_ogre` module name, upstream authors, and LGPL license. It is not an official upstream release.
 
@@ -8,18 +8,19 @@ This is a local compatibility adaptation of [OGRECave/blender2ogre](https://gith
 
 1. In Blender, open **Edit → Preferences → Add-ons**.
 2. Use the menu at the upper right and choose **Install from Disk**.
-3. Select `blender2ogre_Blender_5_2_v0.9.8.zip` and enable **OGRE Importer-Exporter (.scene, .mesh, .skeleton)**.
+3. Select `blender2ogre_Blender_5_2_v0.9.9.zip` and enable **OGRE Importer-Exporter (.scene, .mesh, .skeleton)**.
 
 The ZIP contains one `io_ogre` folder. Install it as a legacy add-on; do not select the entire project folder. Disable the older `io_ogre` add-on before installing the replacement, then restart Blender and enable the new version. Keep one active `io_ogre` installation.
 
 The bundled Windows OGRE converter and mesh upgrader are selected automatically. Missing paths to a previous bundled/default converter are repaired when the new package loads; custom tool choices remain available in **OGRETOOLS_XML_CONVERTER** and **OGRETOOLS_MESH_UPGRADER**. The executables and DLLs are inside `io_ogre/tools/windows`.
 
-The clean source and installer are self-contained. `ChatGPT` contains optional development files and can be deleted. Neither the old Blender 4 tool library nor any development scripts are required at runtime.
+The clean source and installer are self-contained. Development files remain outside the installed `io_ogre` add-on. Neither the old Blender 4 tool library nor any development scripts are required at runtime.
 
 ## Use
 
 - **File → Import → Ogre3D (.scene and .mesh)** reads binary `.mesh`, mesh `.xml` (normally `.mesh.xml`), and `.scene` files. Linked `.skeleton` files supply bones and animation clips; standalone skeleton import is not provided. Keep linked meshes, skeletons, material scripts, and textures together. Drag and drop is also available.
 - Shared material scripts and textures in nearby recognized resource packs are found automatically, including the `parts` and `parts/shared` layout in Rigs of Rods truck packs. For another layout, set **Resource Folder** in the import dialog (`IM_IMPORT_RESOURCE_PATH` in scripts). Leave it blank for automatic detection. Import preserves the pack files. After upgrading, re-import the mesh to rebuild materials that previously used placeholders.
+- Older RoR tracks can import `managed_mats.material` without shipping it. When that script is absent, `RoR/Managed_Mats/Base` and `BaseNoShadows` retain the child's explicit surface passes and textures. Supplied resource definitions take precedence. Game shadow programs are not recreated; other managed/custom bases still require their actual resources, and missing images remain reported.
 - Import uses faster XML reading and bulk mesh-data transfers automatically. With **Merge Submeshes** enabled, static submeshes that use shared geometry reuse one vertex buffer. This reduces duplicate vertices while preserving triangle corners, UV layers, normals and material assignments. Rigged and shape-animated meshes retain their existing topology path. Import speed varies with the asset and computer; binary meshes still pass through the native XML converter.
 - **File → Export → Ogre3D (.scene and .mesh)** exports selected objects to a `.scene` file with binary `.mesh`, linked `.skeleton`, material scripts, and supported textures. Select a mesh and keep an active object before exporting.
 - Work in Object Mode for import/export. Put skeletal and shape animation actions into NLA strips to export named clips. Multiple clips use their individual Blender 5 action slots. Node transform animation also exports a single active action without an NLA strip. Imported clips are stored in muted NLA tracks; activate the desired track or action to preview it.

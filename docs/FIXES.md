@@ -1,6 +1,6 @@
 # Fixes and improvements in this adaptation
 
-Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.8. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
+Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.9. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
 
 ## Blender 5 compatibility and installation
 
@@ -26,6 +26,7 @@ The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in th
 
 ## Materials and images
 
+- Recovered explicit track, bus and tire textures on legacy RoR assets that omit the game-supplied `managed_mats.material` script, using the known simple Base/BaseNoShadows compatibility path while preserving real overrides and missing-resource diagnostics.
 - Found recognized nearby asset-pack roots and shared script/texture subdirectories, with an optional Resource Folder control for other layouts.
 - Found material definitions referenced by submeshes even when absent from the mesh's local script.
 - Resolved local/shared imports, inheritance, scoped variables, abstract material/pass/technique/texture-unit templates and quoted named overrides.

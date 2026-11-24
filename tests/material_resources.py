@@ -3,6 +3,7 @@ from pathlib import Path
 import json, sys, traceback, uuid, hashlib
 import bpy, addon_utils
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'tests'))
 MODULE_ROOT=Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv and len(sys.argv)>sys.argv.index('--')+1 else ROOT
 sys.path.insert(0,str(MODULE_ROOT))
 addon_utils.enable('io_ogre',default_set=True,persistent=False)
@@ -37,6 +38,57 @@ def case(fn):
 
 def read(file):
     data={}; MaterialParser.xParseMaterial(data,str(file),str(file.parent)); return data
+
+@case
+def ror_managed_base_recovers_reported_track_bus_and_tire_textures():
+    folder=OUT/'managed_track'
+    expected={'Allstar2019day2Fs':'track.png','day2bus':'bus.png',
+              'day2bus2':'bus2.png','Allstartires':'tires.png'}
+    text='import * from "managed_mats.material"\n'
+    for name,filename in expected.items():
+        image(folder/filename)
+        text+='material "%s" : RoR/Managed_Mats/Base { technique BaseTechnique { pass BaseRender { texture_unit Diffuse_Map { texture "%s" } } } }\n' % (name,filename)
+    data=read(write(folder/'track.material',text))
+    assert set(data)==set(expected),data
+    assert {name:Path(info['texture']).name for name,info in data.items()}==expected,data
+    assert not Report.warnings,Report.warnings
+
+@case
+def ror_managed_base_supports_unnamed_passes_and_real_bases_win():
+    folder=OUT/'managed_real'
+    texture=image(folder/'local.png')
+    file=write(folder/'local.material','''import * from "managed_mats.material"
+material Local : RoR/Managed_Mats/BaseNoShadows {
+technique { pass { texture_unit { texture local.png } } }
+}
+''')
+    assert Path(read(file)['Local']['texture'])==texture
+    assert not Report.warnings,Report.warnings
+    # A supplied base must retain its actual inheritance and properties.
+    write(folder/'managed_mats.material','abstract material RoR/Managed_Mats/BaseNoShadows { technique { pass { diffuse 0.2 0.3 0.4 1 } } }')
+    data=read(file)
+    assert data['Local']['diffuse']==[.2,.3,.4,1],data
+    assert Path(data['Local']['texture'])==texture
+    assert not Report.warnings,Report.warnings
+
+@case
+def ror_recovery_does_not_hide_unknown_parents_or_missing_images():
+    folder=OUT/'managed_errors'
+    file=write(folder/'local.material','''import * from "managed_mats.material"
+material Custom : RoR/Managed_Mats/Custom {}
+material Missing : RoR/Managed_Mats/Base {
+technique { pass { texture_unit { texture absent.png } } }
+}
+''')
+    data=read(file)
+    assert set(data)=={'Missing'},data
+    assert any('Missing parent material: RoR/Managed_Mats/Custom' in w for w in Report.warnings),Report.warnings
+    assert any('Base texture "absent.png"' in w for w in Report.warnings),Report.warnings
+    Report.reset()
+    plain=write(OUT/'unrelated/local.material','import * from "unrelated.material"\nmaterial Custom : RoR/Managed_Mats/Base {}')
+    assert read(plain)=={}
+    assert any('unrelated.material' in w for w in Report.warnings),Report.warnings
+    assert any('Missing parent material' in w for w in Report.warnings),Report.warnings
 
 @case
 def shared_pack_abstract_pass_uses_albedo_not_specular():

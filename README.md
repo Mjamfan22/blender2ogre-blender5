@@ -328,6 +328,6 @@ Additionally, the following companies have supported/sponsored the development e
 - **Export controls:** fixed Selected Only through hierarchies and merge collections; added Resource Prefix, Apply Modifiers and optional sparse node-key sampling.
 - **File protection:** isolated native conversion, preserved source XML, added import rollback and staged export, and restored selection, modifiers, rig visibility, action slots and timeline state after operations.
 - **Tools and diagnostics:** bundled the compatible Windows tools and license notices, repaired missing bundled/default paths, added process timeouts and configuration validation, and throttled excessive progress updates.
-- **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **73 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
+- **Documentation and validation:** added material/animation guidance, compatibility notes, installer checks and regression tests. All **76 release checks passed** against the installed ZIP; GitHub CI checks source, package and documentation integrity.
 
 [Complete fixes and improvements](docs/FIXES.md) · [Version-by-version patch notes](CHANGELOG.md) · [Upstream issue audit](docs/UPSTREAM_ISSUES.md) · [Validation](docs/VALIDATION.md)

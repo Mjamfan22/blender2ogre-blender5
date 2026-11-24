@@ -1,3 +1,10 @@
+# Blender 5.2 adaptation 0.9.9
+
+Fixes missing track, bus and tire textures on older Allstar/Rigs of Rods imports whose `managed_mats.material` dependency is supplied by the game instead of the asset archive.
+
+- Retains explicit local surface passes and textures for the known `RoR/Managed_Mats/Base` and `BaseNoShadows` templates when that script is absent. Real supplied definitions take precedence; other missing parents and images still produce diagnostics.
+- Adds three regressions covering all four reported material names, named/unnamed passes, real-parent precedence and missing-resource diagnostics. Engine shadow programs and other managed shader bases remain outside this compatibility path.
+
 # Blender 5.2 adaptation 0.9.8
 
 Public fork update: connected the adaptation to OGRECave/blender2ogre's fork network, retained the existing project URL and original README/images, and updated the contribution and installation guides for public access. The release and review PR remain drafts. The installer is unchanged.

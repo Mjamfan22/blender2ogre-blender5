@@ -22,6 +22,7 @@ class MaterialResolver:
         self.globals = {}
         self.templates = {}
         self.sources = {}
+        self.missing_ror_managed_script = False
 
     def warn(self, message):
         logger.warning(message)
@@ -99,6 +100,11 @@ class MaterialResolver:
                     found = self.resources.find(pattern, path.parent)
                     if found:
                         self.load(found)
+                    elif pattern.casefold() == 'managed_mats.material':
+                        # RoR supplies this script with the game, outside track
+                        # archives. Its simple base adds engine shadow programs;
+                        # the exported child still contains the surface pass.
+                        self.missing_ror_managed_script = True
                     else:
                         self.warn('Material script not found in the asset resources: ' + pattern)
             elif header[0] == 'set' and len(header) >= 3:
@@ -159,6 +165,12 @@ class MaterialResolver:
         if label in chain:
             raise ValueError('Cyclic %s inheritance: %s' % (kind, ' -> '.join((*chain,label))))
         if (kind,name) not in self.templates:
+            if (kind == 'material' and self.missing_ror_managed_script and
+                    name in ('RoR/Managed_Mats/Base', 'RoR/Managed_Mats/BaseNoShadows')):
+                # Retain the child's explicit techniques, passes and textures.
+                # Real resource definitions always win. Do not generalize this
+                # to transparent/specular/custom bases with unknown semantics.
+                return []
             raise ValueError('Missing parent %s: %s' % (kind,name))
         chain = (*chain,label)
         header, body = self.templates[kind,name]
