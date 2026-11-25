@@ -1,0 +1,19 @@
+{
+  "engine": "BLENDER_EEVEE",
+  "two_sided_backing_rgb": [
+    0.5131127741187811,
+    0.5131127741187811,
+    0.5131740486249328
+  ],
+  "source_culling_rgb": [
+    0.8655637931078672,
+    0.24479168187826872,
+    0.15294118225574493
+  ],
+  "front_texture_visible": true,
+  "date": "2026-11-25",
+  "version": "0.9.13",
+  "installer_sha256": "bbf574f2f63ff0b7682d4878aceef51d53aba1f26ad1afe50854951352ff7f73",
+  "live_banner_materials_repaired": 18,
+  "live_geometry_assignments_and_selection_preserved": true
+}

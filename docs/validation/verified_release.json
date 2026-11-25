@@ -1,14 +1,14 @@
 {
-  "version": "0.9.12",
+  "version": "0.9.13",
   "blender": "5.2.3 LTS",
   "installed_zip": true,
-  "passed": 87,
+  "sha256": "bbf574f2f63ff0b7682d4878aceef51d53aba1f26ad1afe50854951352ff7f73",
+  "passed": 90,
   "failed": 0,
   "skipped": [],
   "full_suite": true,
-  "date": "2026-11-23",
-  "sha256": "8230fd8757f0373ec9044de2d2e37cb3b0d75b6bbd296197a29b7f01a11eea3b",
-  "bytes": 2267377,
+  "date": "2026-11-25",
+  "bytes": 2267886,
   "files": 60,
   "tests": [
     {
@@ -357,6 +357,18 @@
     },
     {
       "test": "batch_multi_file_drop_and_quoted_replay_script",
+      "passed": true
+    },
+    {
+      "test": "ogre_default_and_explicit_culling_preserve_existing_materials",
+      "passed": true
+    },
+    {
+      "test": "inherited_two_sided_culling_and_child_override_are_retained",
+      "passed": true
+    },
+    {
+      "test": "rendered_banner_backing_cannot_cover_the_front_texture",
       "passed": true
     }
   ]

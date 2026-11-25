@@ -1,6 +1,6 @@
 # blender2ogre — Blender 5.2 adaptation
 
-Version 0.9.12, for Windows x64 and Blender 5.2.3 LTS.
+Version 0.9.13, for Windows x64 and Blender 5.2.3 LTS.
 
 This is a local compatibility adaptation of [OGRECave/blender2ogre](https://github.com/OGRECave/blender2ogre), retaining its `io_ogre` module name, upstream authors, and LGPL license. It is not an official upstream release.
 
@@ -58,6 +58,8 @@ No `.ogre` file was found in the inspected local reference libraries. This packa
 The bundled tools are Windows executables. Linux requires native OGRE tools and their shared-library dependencies; pointing at an executable alone cannot resolve a missing `libOgreMain.so`. Linux/snap/flatpak installation and library-loader behavior are not verified by this Windows release. Use the ZIP installer in a writable user profile instead of copying into a read-only system add-ons directory.
 
 ## Changes and attribution
+
+Material import honors OGRE's default back-face culling, keeping reversed banner backings from covering their textured fronts in Material Preview/EEVEE. Scripts that explicitly request `cull_hardware none` retain two-sided display, including inherited settings. Already imported materials retain their previous settings until repaired or re-imported. A clean import report confirms successful data loading; it does not establish that every engine-specific visual property has been reproduced.
 
 The baseline is upstream commit `0d094a40a589752802a9f8823cf08cd8acd6f8fe` (2026-03-15), compared with the user's original `blender2ogre` archives. Local changes add Blender 5 action-slot access, per-clip sampling, matrix-based skeleton import, color/UV fixes, hierarchical scene and node animation import, camera projection round trips, material translation, protected conversion scratch files, staged output, rollback and editing-state restoration, converter path repair/timeouts, and paired RNA registration/cleanup. Local adaptation files and modified upstream files remain under LGPL 2.1 or later. See `RELEASE_NOTES.md` for the release summary.
 

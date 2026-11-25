@@ -37,7 +37,9 @@ def create_material(name, info):
         material['ogre_alpha_threshold'] = max(0,min(1,float(rejection[1])/255))
         material['ogre_alpha_mode'] = 'BLEND' if transparent else 'MASK'
     material.surface_render_method = 'BLENDED' if transparent else 'DITHERED'
-    material.use_backface_culling = info.get('cull_hardware') not in ('none', None)
+    # OGRE defaults to clockwise/back-face culling. Showing both sides makes
+    # reverse-facing banner backings cover their correctly textured fronts.
+    material.use_backface_culling = info.get('cull_hardware', 'clockwise') != 'none'
     texture_path = info.get('texture')
     if texture_path:
         texture = nodes.new('ShaderNodeTexImage')

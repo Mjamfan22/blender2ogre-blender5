@@ -1,6 +1,6 @@
 # Fixes and improvements in this adaptation
 
-Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.12. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
+Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`, delivered across versions 0.9.4–0.9.13. This list describes completed local changes; it does not claim every upstream report is resolved. See [the issue audit](UPSTREAM_ISSUES.md) for individual reports and [the changelog](../CHANGELOG.md) for release history.
 
 ## Batch import and organization
 
@@ -33,6 +33,8 @@ Changes relative to upstream baseline `0d094a40a589752802a9f8823cf08cd8acd6f8fe`
 The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in the documented fresh-process comparison. All eight UV layers, custom normals and material assignments matched at every triangle corner. The 121,422 source vertices replace three duplicated buffers, with no triangle decimation or welding of distinct source vertices. [Measurement conditions](VALIDATION.md).
 
 ## Materials and images
+
+- Restored OGRE default back-face culling for omitted script settings, keeping gray banner backs from covering sponsor artwork. Retained explicit/inherited two-sided materials and added an EEVEE pixel comparison alongside import regressions.
 
 - Named objects and mesh datablocks from the source file when their material is the reserved unassigned-surface placeholder, including dotted XML filenames, separate parts and repeated imports.
 - Recognized the reserved unassigned-surface placeholder with an informational message instead of misleading missing-parent/definition warnings, while preserving supplied definitions and genuine missing-resource warnings.
@@ -78,7 +80,7 @@ The measured 190,826-triangle import improved from 39.019 to 7.706 seconds in th
 - Added current installation/upgrade instructions, material mapping and animation-authoring guidance; replaced the dead Meshmoon tutorial link and documented physics/Linux/OGRENext limits.
 - Retained the upstream project identity, full Git ancestry, author credits and LGPL licensing, along with unmodified tool binaries and their notices.
 - Added actual ZIP-install tests and numeric geometry/deformation comparisons.
-- Verified all 87 release checks in Blender 5.2.3 and provided a 79-check self-contained subset with eight explicit fixture skips.
+- Verified all 90 release checks in Blender 5.2.3 and provided a 82-check self-contained subset with eight explicit fixture skips.
 - Added CI for syntax, exact runtime hashes, deterministic package bytes and documentation links; made archive ordering consistent between Windows and Linux.
 - Organized development files into `tests/`, `tools/` and `docs/validation/`; local outputs and profiles are ignored under `.build/`.
 

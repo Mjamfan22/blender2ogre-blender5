@@ -1,6 +1,6 @@
 # Release archive
 
-The Blender 5.2 adaptation's documented verified updates are listed below in development order. Each release includes its matching installer, full source, documentation bundle with original upstream images, version-specific patch notes, sanitized validation, a complete patch and SHA-256 checksums. [v0.9.12](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.12) is the latest release.
+The Blender 5.2 adaptation's documented verified updates are listed below in development order. Each release includes its matching installer, full source, documentation bundle with original upstream images, version-specific patch notes, sanitized validation, a complete patch and SHA-256 checksums. [v0.9.13](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.13) is the latest release.
 
 | Version | Update | Installed-ZIP checks passed | Release and documentation |
 | --- | --- | ---: | --- |
@@ -13,6 +13,7 @@ The Blender 5.2 adaptation's documented verified updates are listed below in dev
 | 0.9.10 | Unassigned collision material handling | 78 | [Release](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.10) · [Documentation ZIP](https://github.com/Mjamfan22/blender2ogre-blender5/releases/download/v0.9.10/DOCUMENTATION_v0.9.10.zip) |
 | 0.9.11 | Source filenames for placeholder meshes | 79 | [Release](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.11) · [Documentation ZIP](https://github.com/Mjamfan22/blender2ogre-blender5/releases/download/v0.9.11/DOCUMENTATION_v0.9.11.zip) |
 | 0.9.12 | Batch import and per-asset collections | 87 | [Release](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.12) · [Documentation ZIP](https://github.com/Mjamfan22/blender2ogre-blender5/releases/download/v0.9.12/DOCUMENTATION_v0.9.12.zip) |
+| 0.9.13 | Banner visibility and source material culling | 90 | [Release](https://github.com/Mjamfan22/blender2ogre-blender5/releases/tag/v0.9.13) · [Documentation ZIP](https://github.com/Mjamfan22/blender2ogre-blender5/releases/download/v0.9.13/DOCUMENTATION_v0.9.13.zip) |
 
 Download `blender2ogre_Blender_5_2_v<version>.zip` to install the add-on. The source and documentation archives are separate reference downloads. Each `PATCH_NOTES_v<version>.md` covers that version's changes, installation, verification and limits; each `DOCUMENTATION_v<version>.zip` contains a `GETTING_STARTED.md` and `RELEASE.md` alongside the matching historical guides. [Installation and upgrade instructions](INSTALLATION.md) explain how to upgrade safely.
 

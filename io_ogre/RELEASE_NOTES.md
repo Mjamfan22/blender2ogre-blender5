@@ -1,3 +1,9 @@
+# Blender 5.2 adaptation 0.9.13
+
+Fixes gray banner backs covering sponsor artwork by restoring OGRE's default clockwise/back-face culling when a material script omits `cull_hardware`. Explicit `cull_hardware none`, including inherited two-sided settings, is retained. Textures, UVs, vertex data, material assignments and topology are unchanged.
+
+Adds import-level regressions for default/explicit/inherited culling and an EEVEE render comparison with a sponsor surface behind a reverse-facing gray backing. The render test reproduces the gray obstruction with two-sided materials and verifies that source culling reveals the front texture.
+
 # Blender 5.2 adaptation 0.9.12
 
 Adds batch import from the file browser and multi-file drag and drop. Select several meshes or scenes and import them in one operation. **Collection per Asset** is enabled by default, naming each new collection from its source file while retaining scene hierarchies and preserving existing collections. Disable it to keep the previous collection behavior.

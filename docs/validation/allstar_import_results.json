@@ -1,5 +1,22 @@
 {
-  "version": "0.9.12",
+  "banner_materials": [
+    {
+      "material": "Allstarbanners",
+      "image": "All_Star_banners.png",
+      "backface_culling": true
+    },
+    {
+      "material": "xtrabanners",
+      "image": "xtrabanners.png",
+      "backface_culling": true
+    },
+    {
+      "material": "BlankBanner",
+      "image": "BlankBanner.png",
+      "backface_culling": true
+    }
+  ],
+  "version": "0.9.13",
   "blender": "5.2.3 LTS",
   "assets": [
     {
@@ -53,6 +70,47 @@
       },
       "warnings": [],
       "errors": []
+    },
+    {
+      "mesh": "Vegasxtra",
+      "collection": "Vegasxtra",
+      "object_name": "Vegasxtra",
+      "mesh_data_name": "Vegasxtra",
+      "vertices": 126807,
+      "triangles": 85704,
+      "materials": {
+        "BlueDice.001": "BlueDice.png",
+        "OrangeDice.001": "OrangeDice.png",
+        "VegasCrowdBack": "VegasCrowdBack.png",
+        "VegasCrowdEmpty": "VegasCrowdEmpty.png",
+        "VegasCrowdFront": "VegasCrowdFront.png",
+        "WheelLoaderRecSupport.png.002": "WheelLoaderRecSupport.png",
+        "MI_caterpillar_4.002": "JCBThing.png",
+        "WheelLoaderRecoveryUnit.png.002": "WheelLoaderRecoveryUnit.png",
+        "WheelLoaderRecSupport.png.001": "WheelLoaderRecSupport.png",
+        "BlueDice": "BlueDice.png",
+        "OrangeDice": "OrangeDice.png",
+        "Chassis_Colors_V2_2020": "Chassis_Colors_V2_2020.png",
+        "LightsMisc": "StartLightMisc.png",
+        "GreenLight": "GreenLight.png",
+        "Chassis_Colors_V2_2020_Invert": "Chassis_Colors_V2_2020_Invert.png",
+        "RedLight": "RedLight.png",
+        "YellowLight": "YellowLight.png",
+        "T_MedicMule_BC.png.002": "T_MedicMule_BC.png",
+        "Allstarbanners": "All_Star_banners.png",
+        "xtrabanners": "xtrabanners.png",
+        "BlankBanner": "BlankBanner.png",
+        "OrangeKRail": "OrangeKRail.png",
+        "BlackKRail": "BlackKRail.png",
+        "OrangePlastic.001": "OrangePlastic.png",
+        "BlackTarp.002": "BlackTarp.png",
+        "BlueKRaiil.001": "BlueKRail.png",
+        "BlackContainers.001": "BlackContainer.png",
+        "BlueContainer": "BlueContainer.png",
+        "OranegContainer": "OrangeContainer.png"
+      },
+      "warnings": [],
+      "errors": []
     }
   ],
   "originals_unchanged": true,
@@ -63,15 +121,15 @@
     "Allstartires": "CharlotteTires.png"
   },
   "batch_import": true,
-  "files_imported": 3,
+  "files_imported": 4,
   "warnings": [],
   "errors": [],
   "messages": [
     "Vegas19PART2Col.mesh: Surface uses the exporter placeholder \"_missing_material_\": no source material or texture is assigned."
   ],
-  "vertices": 214782,
-  "triangles": 236412,
-  "date": "2026-11-23",
+  "vertices": 341589,
+  "triangles": 322116,
+  "date": "2026-11-25",
   "installed_zip": true,
-  "installer_sha256": "8230fd8757f0373ec9044de2d2e37cb3b0d75b6bbd296197a29b7f01a11eea3b"
+  "installer_sha256": "bbf574f2f63ff0b7682d4878aceef51d53aba1f26ad1afe50854951352ff7f73"
 }
