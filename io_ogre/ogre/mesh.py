@@ -4,7 +4,7 @@ import bmesh, mathutils, math
 from ..report import Report
 from ..util import *
 from ..xml import *
-from .. import util, config
+from .. import util, config, animation as anim_api
 from .material import *
 from .skeleton import Skeleton
 
@@ -33,8 +33,11 @@ class Vertex(object):
         self.tw = tw
         self.boneWeights = boneWeights
         self.original = original
+        self.uvs = ((u, v),)
 
     def __eq__(self, o):
+        if self.a != o.a or self.original != o.original or self.boneWeights != o.boneWeights: return False
+        if self.uvs != o.uvs: return False
         if self.nx != o.nx or self.ny != o.ny or self.nz != o.nz: return False
         elif self.x != o.x or self.y != o.y or self.z != o.z: return False
         elif self.u != o.u or self.v != o.v: return False
@@ -60,30 +63,28 @@ class Vertex(object):
         result = hash_combine( result, hash(self.tw) )
         return result
 
-def write_submeshnames (doc, materials):
+def write_submeshnames (doc, materials, used=None):
     doc.start_tag('submeshnames', {})
     for i, material in enumerate (materials):
-        doc.leaf_tag('submesh', {'name': material.name, 'index': i})
+        if used is not None and i not in used:
+            continue
+        index = used.index(i) if used is not None else i
+        doc.leaf_tag('submeshname', {'name': material_name(material).removeprefix('extern.') if material else '_missing_material_', 'index': index})
     doc.end_tag('submeshnames')
 
-def write_skeletonlink (obj_name, arm, doc):
+def write_skeletonlink (obj_name, arm, doc, ob):
     if arm is None:
         return
     skeleton_name = obj_name
-    if config.get('SHARED_ARMATURE') is True:
-        skeleton_name = arm.data.name
+    if util.can_share_skeleton(ob, arm):
+        skeleton_name = util.export_name(arm.data.name)
     skeleton_name = util.clean_object_name(skeleton_name)
     doc.leaf_tag('skeletonlink', { 'name' : '%s.skeleton' % skeleton_name })
 
 def calc_boneindex (arm):
     if arm is None:
         return {}
-    boneIndexFromName = {}
-    boneIndex = 0
-    for bone in arm.pose.bones:
-        boneIndexFromName[ bone.name ] = boneIndex
-        boneIndex += 1
-    return boneIndexFromName
+    return {name:index for index,name in enumerate(util.exported_bone_names(arm))}
 
 def calc_geometry (mesh, ob, materials, tangents, arm):
     bm = bmesh.new()
@@ -116,8 +117,7 @@ def calc_geometry (mesh, ob, materials, tangents, arm):
     boneindex = calc_boneindex (arm)
     TRIM_BONE_WEIGHTS = config.get('TRIM_BONE_WEIGHTS')
 
-    import sys
-    progressScale = 1.0 / (len(mesh.polygons) - 1)
+    progressbar = util.ProgressBar('Vertices', len(mesh.polygons))
     for fidx, face in enumerate(mesh.polygons):
         tris = []
         tris.append( (face.vertices[0], face.vertices[1], face.vertices[2]) )
@@ -125,9 +125,7 @@ def calc_geometry (mesh, ob, materials, tangents, arm):
             tris.append( (face.vertices[0], face.vertices[2], face.vertices[3]) )
                     
         # Progress
-        percent = fidx * progressScale
-        sys.stdout.write( "\rVertices [" + '=' * int(percent*50) + '>' + '.' * int(50-percent*50) + "] " + str(int(percent*10000)/100.0) + "%   ")
-        sys.stdout.flush()
+        progressbar.update(fidx)
         
         # should be triangles
         if len(face.vertices) != 3:
@@ -166,6 +164,7 @@ def calc_geometry (mesh, ob, materials, tangents, arm):
             
             # Add vertex
             vert = Vertex(x, y, z, nx, ny, nz, u, v, r, g, b, ra, tx, ty, tz, tw, boneWeights, vertex)
+            vert.uvs = tuple(tuple(layer.data[loop].uv) for layer in mesh.uv_layers)
             nextIdx = map.get(vert)
             if nextIdx == None:
                 nextIdx = len(vertexList)
@@ -193,7 +192,7 @@ def calc_materials (ob):
     materials = []
     for material in ob.data.materials:
         materials.append (material)
-    return materials
+    return materials or [None]
 
 def calc_submeshes (geometry, materials):    
     submeshes = {}
@@ -243,7 +242,7 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
             face_count = len (faces[i])
             Report.triangles += face_count
             if face_count == 0:
-                Report.warnings.append('BAD SUBMESH "%s": material %r, has not been applied to any faces - not exporting as submesh.' % (obj_name, materials[i].name) )
+                Report.warnings.append('BAD SUBMESH "%s": material %r, has not been applied to any faces - not exporting as submesh.' % (obj_name, (material_name(materials[i]).removeprefix('extern.') if materials[i] else '_missing_material_')) )
                 continue # fixes corrupt unused materials
 
             vertex_count = len (remap)
@@ -253,7 +252,7 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
                 'usesharedvertices' : 'false',
                 "use32bitindexes" : str(bool(vertex_count > 65535)),
                 "operationtype" : "triangle_list",
-                "material" : materials[i].name}
+                "material" : (material_name(materials[i]).removeprefix('extern.') if materials[i] else '_missing_material_')}
             doc.start_tag('submesh', submesh_attributes)
 
             doc.start_tag('faces', { 'count' : str(face_count)})
@@ -272,7 +271,7 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
                 'normals':'true',
                 'tangents': str(bool(tangents)),
                 'tangent_dimensions': str(tangents),
-                'colours_diffuse' : str(bool( mesh.vertex_colors )),
+                'colours_diffuse' : str(VertexColorLookup(mesh).has_color_data).lower(),
                 'texture_coords' : '%s' % int (len (mesh.uv_layers))})
 
             logger.info('* Writing submesh vertices: ' + str(i))
@@ -288,10 +287,11 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
                 if tangents != 0:
                     doc.leaf_tag('tangent', {'x' : '%6f' % v.tx, 'y' : '%6f' % v.ty, 'z' : '%6f' % v.tz, 'w' : '%6f' % v.tw})
                 if vertex_color_lookup.has_color_data:
-                    doc.leaf_tag('colour_diffuse', {'value' : '%6f %6f %6f %6f' % (v.r,v.g,v.b,v.ra)})
+                    doc.leaf_tag('colour_diffuse', {'value' : '%6f %6f %6f %6f' % (v.r,v.g,v.b,v.a)})
                 # Texture maps
                 if dotextures:
-                   doc.leaf_tag('texcoord', { 'u' : '%6f' % v.u, 'v' : '%6f' % (1.0-v.v) })
+                    for u, uv_v in v.uvs:
+                        doc.leaf_tag('texcoord', {'u': '%6f' % u, 'v': '%6f' % (1.0-uv_v)})
                 doc.end_tag('vertex')
 
             doc.end_tag('vertexbuffer')
@@ -311,8 +311,8 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
             doc.end_tag('submesh')
         doc.end_tag('submeshes')
 
-        write_submeshnames (doc, materials)
-        write_skeletonlink (obj_name, arm, doc)
+        write_submeshnames (doc, materials, [i for i in faces if faces[i]])
+        write_skeletonlink (obj_name, arm, doc, ob)
 
         doc.close() # reported by Reyn
         f.close ()
@@ -321,54 +321,25 @@ def write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, 
 
 class VertexColorLookup:
     def __init__(self, mesh):
-        self.__colors = None
-
-        color_names = ["col", "color", "colour", "attribute"]
-
-        vertex_colors = None
-
-        # In Blender version 3.2, vertex colors have been refactored into generic color attributes
-        # https://developer.blender.org/docs/release_notes/3.2/sculpt/
-        if bpy.app.version >= (3, 2, 0):
-            vertex_colors = mesh.color_attributes
-        else:
-            vertex_colors = mesh.vertex_colors
-
-        if len(vertex_colors) > 0:
-            logger.debug("* Mesh has vertex colors")
-
-            for key, colors in vertex_colors.items():
-                if (self.__colors is None) and (key.lower() in color_names):
-                    self.__colors = colors
-
-                    if (bpy.app.version >= (3, 2, 0)):
-                        if colors.domain != 'CORNER':
-                            Report.warnings.append( 'Mesh "%s" with color attribute "%s" has wrong color domain: "%s" (should be: "CORNER")' % \
-                                (mesh.name, key, colors.domain) )
-                        if colors.data_type != 'BYTE_COLOR':
-                            Report.warnings.append( 'Mesh "%s" with color attribute "%s" has wrong color data type: "%s" (should be: "BYTE_COLOR")' % \
-                                (mesh.name, key, colors.data_type) )
-
-            if self.__colors is None:
-                # No color found by name, assume that the only vertex color data is actual color data
-                logger.debug("No color found by name, assume that the only vertex color data is actual color data")
-                self.__colors = colors
-
-            if self.__colors:
-                self.__colors = [x.color for x in self.__colors.data]
-                #self.__colors = [x.color_srgb for x in self.__colors.data]
+        self._colors = None
+        self._mesh = mesh
+        attrs = mesh.color_attributes
+        # Honor the render color, including arbitrary names and POINT-domain
+        # float attributes; OGRE expects one color value for each exported loop.
+        if len(attrs):
+            index = attrs.render_color_index
+            self._colors = attrs[index] if 0 <= index < len(attrs) else attrs.active_color or attrs[0]
 
     @property
     def has_color_data(self):
-        return self.__colors is not None
+        return self._colors is not None
 
-    def get(self, item):
-        if self.__colors:
-            color = self.__colors[item]
-        else:
-            color = [1.0] * 4
-        return color
-    
+    def get(self, loop_index):
+        if self._colors is None:
+            return (1.0, 1.0, 1.0, 1.0)
+        index = self._mesh.loops[loop_index].vertex_index if self._colors.domain == 'POINT' else loop_index
+        return self._colors.data[index].color
+
 
 def write_shared (target_file, path, dotextures, mesh, normals, tangents, material_prefix, ob, obj_name, copy, start, ignore_shape_animation, isLOD, disable_mods):
     with open(target_file, 'w') as f:
@@ -391,7 +362,7 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
                 'normals':'true',
                 'tangents': str(bool(tangents)),
                 'tangent_dimensions': str(tangents),
-                'colours_diffuse' : str(bool( mesh.vertex_colors )),
+                'colours_diffuse' : str(VertexColorLookup(mesh).has_color_data).lower(),
                 'texture_coords' : '%s' % len(mesh.uv_layers) * dotextures
         })
 
@@ -495,7 +466,7 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
                     todo: maybe not best solution, check other ways (let blender do all the work, or only
                     support smooth shading, what about seems, smoothing groups, materials, ...)
                 '''
-                vert = VertexNoPos(numverts, nx, ny, nz, r, g, b, ra, vert_uvs)
+                vert = VertexNoPos(numverts, nx, ny, nz, r, g, b, ra, vert_uvs, (tx,ty,tz,tw) if tangents else None)
                 alreadyExported = False
                 if idx in shared_vertices:
                     for vert2 in shared_vertices[idx]:
@@ -585,11 +556,13 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
         logger.info('* Writing submeshes')
 
         doc.start_tag('submeshes', {})
+        used_material_indices = []
         for matidx, (mat_name, extern, mat) in enumerate(materials):
             if len(material_faces[matidx]) == 0:
                 Report.warnings.append('BAD SUBMESH "%s": material %r, has not been applied to any faces - not exporting as submesh.' % (obj_name, mat_name) )
                 continue # fixes corrupt unused materials
 
+            used_material_indices.append(matidx)
             submesh_attributes = {
                 'usesharedvertices' : 'true',
                 # Maybe better look at index of all faces, if one over 65535 set to true;
@@ -597,8 +570,7 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
                 "use32bitindexes" : str(bool(numverts > 65535)),
                 "operationtype" : "triangle_list"
             }
-            if mat_name != "_missing_material_":
-                submesh_attributes['material'] = mat_name
+            submesh_attributes['material'] = mat_name
 
             doc.start_tag('submesh', submesh_attributes)
             doc.start_tag('faces', {
@@ -640,20 +612,17 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
         del shared_vertices
         doc.end_tag('submeshes')
 
-        # Submesh names
-        # todo: why is the submesh name taken from the material
-        # when we have the blender object name available?
+        # Names address the submeshes actually written, after unused slots.
         doc.start_tag('submeshnames', {})
-        for matidx, (mat_name, extern, mat) in enumerate(materials):
-            doc.leaf_tag('submesh', {
-                    'name' : mat_name,
-                    'index' : str(matidx)
-            })
-        idx = len(materials)
-        for name in vertex_groups.keys():
-            name = name[len('ogre.vertex.group.'):]
-            doc.leaf_tag('submesh', {'name': name, 'index': idx})
-            idx += 1
+        used = [(name, external, material) for index, (name, external, material) in enumerate(materials)
+            if index in used_material_indices]
+        for index, (name, external, material) in enumerate(used):
+            doc.leaf_tag('submeshname', {'name':name, 'index':index})
+        index = len(used)
+        for name, faces in vertex_groups.items():
+            if faces:
+                doc.leaf_tag('submeshname', {'name':name[len('ogre.vertex.group.'):], 'index':index})
+                index += 1
         doc.end_tag('submeshnames')
 
         logger.info('- Done at %s seconds' % util.timer_diff_str(start))
@@ -667,7 +636,7 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
             lod_current_distance = lod_distance
 
             for level in range(lod_levels + 1)[1:]:
-                lod_ob_name = obj_name + '_LOD_' + str(level)
+                lod_ob_name = ob.data.name + '_LOD_' + str(level)
                 lod_manual_ob = bpy.context.scene.objects.get(lod_ob_name)
 
                 if lod_manual_ob:
@@ -697,12 +666,12 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
                     logger.info("- Writing LOD %s for distance %s, with %s vertices and %s faces" % 
                         (lod['level'], lod['distance'], len(lod_manual_ob.data.vertices), len(lod_manual_ob.data.loop_triangles)))
 
-                    dot_mesh(lod_manual_ob, path, lod_manual_ob.data.name, ignore_shape_animation, normals, tangents, isLOD=True)
+                    dot_mesh(lod_manual_ob, path, util.export_name(lod_manual_ob.data.name), ignore_shape_animation, normals, tangents, isLOD=True)
 
                     # 'value' is the distance this LOD kicks in for the 'Distance' strategy.
                     doc.leaf_tag('lodmanual', {
                         'value'    : str(lod['distance']),
-                        'meshname' : lod_manual_ob.data.name + ".mesh"
+                        'meshname' : util.export_name(lod_manual_ob.data.name) + ".mesh"
                     })
 
                 doc.end_tag('levelofdetail')
@@ -835,37 +804,18 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
             if lod_pre_mesh_count != len(bpy.data.meshes):
                 logger.warn('- After LOD generation, cleanup failed to erase all temporary data!')
 
-        arm = ob.find_armature()
+        arm = ob.find_armature() if config.get('ARMATURE_ANIMATION') else None
         if arm:
             skeleton_name = obj_name
-            if config.get('SHARED_ARMATURE') is True:
-                skeleton_name = arm.data.name
+            if util.can_share_skeleton(ob, arm):
+                skeleton_name = util.export_name(arm.data.name)
             skeleton_name = util.clean_object_name(skeleton_name)
 
             doc.leaf_tag('skeletonlink', {
                     'name' : '%s.skeleton' % skeleton_name
             })
             doc.start_tag('boneassignments', {})
-            boneOutputEnableFromName = {}
-            boneIndexFromName = {}
-            for bone in arm.pose.bones:
-                boneOutputEnableFromName[ bone.name ] = True
-                if config.get('ONLY_DEFORMABLE_BONES') is True:
-                    # if we found a deformable bone,
-                    if bone.bone.use_deform:
-                        # visit all ancestor bones and mark them "output enabled"
-                        parBone = bone.parent
-                        while parBone:
-                            boneOutputEnableFromName[ parBone.name ] = True
-                            parBone = parBone.parent
-                    else:
-                        # non-deformable bone, no output
-                        boneOutputEnableFromName[ bone.name ] = False
-            boneIndex = 0
-            for bone in arm.pose.bones:
-                boneIndexFromName[ bone.name ] = boneIndex
-                if boneOutputEnableFromName[ bone.name ]:
-                    boneIndex += 1
+            boneIndexFromName = calc_boneindex(arm)
             badverts = 0
             for vidx, v in enumerate(_remap_verts_):
                 check = 0
@@ -981,43 +931,47 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
 
             logger.info('- Done at %s seconds' % util.timer_diff_str(start))
 
-            if mesh.shape_keys.animation_data and len(mesh.shape_keys.animation_data.nla_tracks) > 0:
+            if mesh.shape_keys.animation_data and mesh.shape_keys.animation_data.nla_tracks:
                 logger.info('* Writing shape animations')
+                keys = ob.data.shape_keys
+                anim = keys.animation_data
+                saved_action, saved_slot, saved_nla = anim.action, anim.action_slot, anim.use_nla
+                saved_frame = bpy.context.scene.frame_current
                 doc.start_tag('animations', {})
-                _fps = float( bpy.context.scene.render.fps )
-                for nla in mesh.shape_keys.animation_data.nla_tracks:
-                    for idx, strip in enumerate(nla.strips):
-                        doc.start_tag('animation', {
-                                'name' : strip.name,
-                                'length' : str((strip.frame_end-strip.frame_start)/_fps)
-                        })
-                        doc.start_tag('tracks', {})
-                        doc.start_tag('track', {
-                                'type' : 'pose',
-                                'target' : 'mesh'
-                                # If target is 'mesh', no index needed, if target is submesh then submesh identified by 'index'
-                                #'index' : str(idx)
-                                #'index' : '0'
-                        })
-                        doc.start_tag('keyframes', {})
-                        for frame in range( int(strip.frame_start), int(strip.frame_end)+1, bpy.context.scene.frame_step):#thanks to Vesa
-                            bpy.context.scene.frame_set(frame)
-                            doc.start_tag('keyframe', {
-                                    'time' : str((frame-strip.frame_start)/_fps)
-                            })
-                            for sidx, skey in enumerate( mesh.shape_keys.key_blocks ):
-                                if sidx == 0: continue
-                                doc.leaf_tag('poseref', {
-                                        'poseindex' : str(sidx-1),
-                                        'influence' : str(skey.value)
-                                })
-                            doc.end_tag('keyframe')
-                        doc.end_tag('keyframes')
-                        doc.end_tag('track')
-                        doc.end_tag('tracks')
-                        doc.end_tag('animation')
+                fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
+                try:
+                    anim.use_nla = False
+                    for nla in anim.nla_tracks:
+                        for strip in nla.strips:
+                            if strip.action is None:
+                                continue
+                            anim_api.assign_action(keys, strip.action, strip.action_slot)
+                            first, last = strip.action_frame_start, strip.action_frame_end
+                            doc.start_tag('animation', {'name': strip.name, 'length': str((last-first)/fps)})
+                            doc.start_tag('tracks', {})
+                            doc.start_tag('track', {'type':'pose', 'target':'mesh'})
+                            doc.start_tag('keyframes', {})
+                            from .node_anim import sample_frames
+                            frames = sample_frames(first, last, bpy.context.scene.frame_step)
+                            for frame in frames:
+                                from .node_anim import set_frame
+                                set_frame(frame)
+                                doc.start_tag('keyframe', {'time':str((frame-first)/fps)})
+                                for index, key in enumerate(keys.key_blocks):
+                                    if index:
+                                        doc.leaf_tag('poseref', {'poseindex':str(index-1), 'influence':str(key.value)})
+                                doc.end_tag('keyframe')
+                            doc.end_tag('keyframes')
+                            doc.end_tag('track')
+                            doc.end_tag('tracks')
+                            doc.end_tag('animation')
+                finally:
+                    anim.action = saved_action
+                    if saved_action and saved_slot:
+                        anim.action_slot = saved_slot
+                    anim.use_nla = saved_nla
+                    bpy.context.scene.frame_set(saved_frame)
                 doc.end_tag('animations')
-                logger.info('- Done at %s seconds' % util.timer_diff_str(start))
 
         # Release BMesh resources
         bm.free()
@@ -1040,7 +994,20 @@ def write_shared (target_file, path, dotextures, mesh, normals, tangents, materi
 
         replaceInplace(target_file, '__TO_BE_REPLACED_VERTEX_COUNT__' + '"', str(numverts) + '"' )#+ ' ' * (ls - lr))
 
-def dot_mesh(ob, path, force_name=None, ignore_shape_animation=False, normals=True, tangents=4, isLOD=False, **kwargs):
+def dot_mesh(ob, path, *args, **kwargs):
+    states = [(mod, mod.show_viewport, mod.show_render) for mod in ob.modifiers]
+    previous = set(bpy.data.objects)
+    try:
+        return _dot_mesh_impl(ob, path, *args, **kwargs)
+    finally:
+        for mod, viewport, render in states:
+            mod.show_viewport, mod.show_render = viewport, render
+        for temporary in set(bpy.data.objects) - previous:
+            temporary.to_mesh_clear()
+            bpy.data.objects.remove(temporary, do_unlink=True)
+
+
+def _dot_mesh_impl(ob, path, force_name=None, ignore_shape_animation=False, normals=True, tangents=4, isLOD=False, **kwargs):
     """
     export the vertices of an object into a .mesh file
 
@@ -1052,7 +1019,7 @@ def dot_mesh(ob, path, force_name=None, ignore_shape_animation=False, normals=Tr
       * overwrite - bool. (optional) default False
     """
     obj_name = force_name or ob.data.name
-    obj_name = clean_object_name(obj_name)
+    obj_name = clean_object_name(obj_name) if isLOD else util.export_name(obj_name)
     target_file = os.path.join(path, '%s.mesh.xml' % obj_name )
 
     material_prefix = kwargs.get('material_prefix', '')
@@ -1087,7 +1054,7 @@ def dot_mesh(ob, path, force_name=None, ignore_shape_animation=False, normals=Tr
             disable_mods = ['ARMATURE']
 
         for mod in ob.modifiers:
-            if mod.type in disable_mods and mod.show_viewport is True:
+            if (mod.type in disable_mods or not config.get('APPLY_MODIFIERS')) and mod.show_viewport is True:
                 logger.debug("Disabling Modifier: %s" % mod.name)
                 mod.show_viewport = False
 
@@ -1133,6 +1100,9 @@ def dot_mesh(ob, path, force_name=None, ignore_shape_animation=False, normals=Tr
         tangents = 0
 
     unshare_geometry = config.get ('UNSHARE_GEOMETRY')
+    if unshare_geometry and ob.data.shape_keys and config.get('SHAPE_ANIMATIONS'):
+        Report.warnings.append('Using shared geometry to preserve shape animation for ' + obj_name)
+        unshare_geometry = False
     if unshare_geometry:
         write_unshared (target_file, path, dotextures, mesh, normals, tangents, ob, obj_name)
     else:
@@ -1206,7 +1176,7 @@ def append_triangle_in_vertex_group(mesh, obj, vertex_groups, ogre_indices, blen
         vertex_groups[name].append(ogre_indices)
 
 class VertexNoPos(object):
-    def __init__(self, ogre_vidx, nx,ny,nz, r,g,b,ra, vert_uvs):
+    def __init__(self, ogre_vidx, nx,ny,nz, r,g,b,ra, vert_uvs, tangents=None):
         self.ogre_vidx = ogre_vidx
         self.nx = nx
         self.ny = ny
@@ -1216,9 +1186,11 @@ class VertexNoPos(object):
         self.b = b
         self.ra = ra
         self.vert_uvs = vert_uvs
+        self.tangents = tangents
 
     '''does not compare ogre_vidx (and position at the moment) [ no need to compare position ]'''
     def __eq__(self, o):
+        if self.tangents != o.tangents: return False
         if not math.isclose(self.nx, o.nx): return False
         if not math.isclose(self.ny, o.ny): return False
         if not math.isclose(self.nz, o.nz): return False

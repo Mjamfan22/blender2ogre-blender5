@@ -12,6 +12,7 @@ from .. import bl_info
 from ..report import Report
 from ..util import *
 from .program import OgreProgram
+from .material_settings import alpha_mode, alpha_threshold
 from bpy.props import EnumProperty
 from bpy_extras import io_utils
 from bpy_extras import node_shader_utils
@@ -133,7 +134,7 @@ class OgreMaterialGenerator(object):
 
         self.generate_header()
         with self.w.iword('material').word(self.material_name).embed():
-            if self.material['visible_shadow']:
+            if self.material.get('visible_shadow', True):
                 self.w.iline('receive_shadows on')
             else:
                 self.w.iline('receive_shadows off')
@@ -191,15 +192,16 @@ class OgreMaterialGenerator(object):
 
             color = mat_wrapper.base_color
             alpha = 1.0
-            if mat.blend_method == "CLIP":
+            mode = alpha_mode(mat, mat_wrapper)
+            if mode == 'MASK':
                 alpha = mat_wrapper.alpha
-                self.w.iword('alpha_rejection greater_equal').round(255*mat.alpha_threshold).nl()
-            elif mat.blend_method == "BLEND":
+                self.w.iword('alpha_rejection greater_equal').round(255*alpha_threshold(mat)).nl()
+            elif mode == 'BLEND':
                 alpha = mat_wrapper.alpha
                 self.w.iword('scene_blend alpha_blend').nl()
-                if mat.show_transparent_back:
+                self.w.iword('depth_write off').nl()
+                if not mat.use_backface_culling:
                     self.w.iword('cull_hardware none').nl()
-                    self.w.iword('depth_write off').nl()
 
             if config.get('USE_FFP_PARAMETERS') is True:
                 # arbitrary bad translation from PBR to Blinn Phong
@@ -345,15 +347,23 @@ class OgreMaterialGenerator(object):
         target_filepath = self.change_ext(target_filepath, image)
         target_filepath = join(self.target_path, target_filepath)
 
-        if image.packed_file:
-            # packed in .blend file, save image as target file
-            image.filepath = target_filepath
-            image.save()
-            image.filepath = origin_filepath
+        if image.packed_file or image.source == 'GENERATED':
+            # save_copy leaves paths, packing and the original image untouched.
+            if is_image_postprocessed(image):
+                with tempfile.TemporaryDirectory(prefix='ogre_image_') as folder:
+                    source = join(folder, 'image.' + image.file_format.lower())
+                    image.save(filepath=source, save_copy=True)
+                    util.image_magick(image, source, target_filepath)
+            else:
+                image.save(filepath=target_filepath, save_copy=True)
             logger.info("Writing texture: (%s)", target_filepath)
         else:
             image_filepath = bpy.path.abspath(image.filepath, library=image.library)
             image_filepath = os.path.normpath(image_filepath)
+            if not os.path.isfile(image_filepath):
+                raise ValueError('Texture "%s" has no readable image file: %s. Pack it or save the image before exporting.' % (image.name, origin_filepath or '(empty path)'))
+            if os.path.normcase(os.path.abspath(image_filepath)) == os.path.normcase(os.path.abspath(target_filepath)):
+                return
             
             # Should we update the file
             update = False
@@ -397,7 +407,7 @@ class OgreMaterialGenerator(object):
             name = name_no_ext + "." + image.file_format.lower()
         if config.get('FORCE_IMAGE_FORMAT') != 'NONE':
             name = name_no_ext + "." + config.get('FORCE_IMAGE_FORMAT')
-        return name
+        return clean_object_name(name)
 
 # Make default material for missing materials:
 # * Red flags for users so they can quickly see what they forgot to assign a material to.
@@ -474,15 +484,19 @@ def material_name( mat, clean = False, prefix='' ):
 
     clean: deprecated. do not use!
     """
-    if type(mat) is str:
-        return prefix + clean_object_name(mat, invalid_chars=invalid_chars_in_name)
-    name = clean_object_name(mat.name, invalid_chars=invalid_chars_in_name)
+    raw_name = mat if isinstance(mat, str) else mat.name
+    name = clean_object_name(raw_name, invalid_chars=invalid_chars_in_name)
+    if name.startswith('extern.'):
+        return name
+    resource_prefix = clean_object_name(config.get('EXPORT_PREFIX') or '')
+    if isinstance(mat, str):
+        return resource_prefix + prefix + name
     if mat.library:
         _, filename = split(mat.library.filepath)
         prefix, _ = splitext(filename)
-        return prefix + "_" + name
+        return resource_prefix + prefix + "_" + name
     else:
-        return prefix + name
+        return resource_prefix + prefix + name
 
 def get_shader_program( name ):
     if name in OgreProgram.PROGRAMS:
@@ -790,11 +804,11 @@ def gather_metallic_roughness_texture(mat_wrapper):
             logger.warn("Material: '%s' does not use nodes" % material.name)
             return None
 
-        if 'Principled BSDF' not in  material.node_tree.nodes:
+        if mat_wrapper.node_principled_bsdf is None:
             logger.warn("Material: '%s' does not have a 'Principled BSDF' node" % material.name)
             return None
 
-        input = material.node_tree.nodes['Principled BSDF'].inputs[input_name]
+        input = mat_wrapper.node_principled_bsdf.inputs[input_name]
 
         # Check that input is connected to a node
         if len(input.links) > 0:

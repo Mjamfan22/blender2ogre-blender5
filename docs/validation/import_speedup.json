@@ -1,0 +1,16 @@
+{
+  "before_seconds": 39.018724699970335,
+  "after_seconds": 6.703398600016953,
+  "speedup": 5.8207376628135545,
+  "baseline_vertices": 364266,
+  "optimized_vertices": 121422,
+  "triangles": 190826,
+  "uv_layers": 8,
+  "maximum_corner_differences": {
+    "positions": 0.0,
+    "uvs": 0.0,
+    "normals": 0.0,
+    "materials": 0.0
+  },
+  "installed_module_root": "<local>/addons"
+}

@@ -1,0 +1,58 @@
+{
+  "blender": "5.2.3 LTS",
+  "module_root": "<local>/addons",
+  "tests": [
+    {
+      "test": "bundled_converter",
+      "passed": true
+    },
+    {
+      "test": "triangle_uv_colors_materials",
+      "passed": true
+    },
+    {
+      "test": "point_colors",
+      "passed": true
+    },
+    {
+      "test": "unshared_triangle",
+      "passed": true
+    },
+    {
+      "test": "shape_animation",
+      "passed": true
+    },
+    {
+      "test": "multiple_morph_clips",
+      "passed": true
+    },
+    {
+      "test": "node_animation",
+      "passed": true
+    },
+    {
+      "test": "original_robot_animations",
+      "passed": true
+    },
+    {
+      "test": "original_ogrehead",
+      "passed": true
+    },
+    {
+      "test": "nested_scene_transform",
+      "passed": true
+    },
+    {
+      "test": "invalid_input_cancelled",
+      "passed": true
+    },
+    {
+      "test": "scene_cameras_and_lights",
+      "passed": true
+    },
+    {
+      "test": "register_cycle",
+      "passed": true
+    }
+  ]
+}

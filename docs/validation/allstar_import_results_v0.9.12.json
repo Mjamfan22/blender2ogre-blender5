@@ -1,0 +1,77 @@
+{
+  "version": "0.9.12",
+  "blender": "5.2.3 LTS",
+  "assets": [
+    {
+      "mesh": "Allstar2019day2Fs",
+      "collection": "Allstar2019day2Fs",
+      "object_name": "Allstar2019day2Fs",
+      "mesh_data_name": "Allstar2019day2Fs",
+      "vertices": 19901,
+      "triangles": 38616,
+      "materials": {
+        "Allstar2019day2Fs": "Allstar2019day2Fs.png"
+      },
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "mesh": "Allstar2019day2FsProps",
+      "collection": "Allstar2019day2FsProps",
+      "object_name": "Allstar2019day2FsProps",
+      "mesh_data_name": "Allstar2019day2FsProps",
+      "vertices": 166764,
+      "triangles": 177332,
+      "materials": {
+        "BlueTaurus": "BlueTaurus.png",
+        "BlueCars": "BlueCars.png",
+        "tires.001": "Tire.png",
+        "tires2.001": "Tire2.png",
+        "AllstarTBox.001": "AllstarTBox.png",
+        "Allstarbus2.001": "Allstarbus2.png",
+        "Allstarbus1.001": "Allstarbus1.png",
+        "OrangeCars": "OrangeCars.png",
+        "OrangeTaurus": "OrangeTaurus.png",
+        "OrangeTbox": "OrangeTBOX.png",
+        "GreenTbox": "GreenTbox.png",
+        "day2bus": "day2bus.png",
+        "day2bus2": "day2bus2.png",
+        "Allstartires": "CharlotteTires.png"
+      },
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "mesh": "Vegas19PART2Col",
+      "collection": "Vegas19PART2Col",
+      "object_name": "Vegas19PART2Col",
+      "mesh_data_name": "Vegas19PART2Col",
+      "vertices": 28117,
+      "triangles": 20464,
+      "materials": {
+        "_missing_material_": null
+      },
+      "warnings": [],
+      "errors": []
+    }
+  ],
+  "originals_unchanged": true,
+  "reported_materials_verified": {
+    "Allstar2019day2Fs": "Allstar2019day2Fs.png",
+    "day2bus": "day2bus.png",
+    "day2bus2": "day2bus2.png",
+    "Allstartires": "CharlotteTires.png"
+  },
+  "batch_import": true,
+  "files_imported": 3,
+  "warnings": [],
+  "errors": [],
+  "messages": [
+    "Vegas19PART2Col.mesh: Surface uses the exporter placeholder \"_missing_material_\": no source material or texture is assigned."
+  ],
+  "vertices": 214782,
+  "triangles": 236412,
+  "date": "2026-11-23",
+  "installed_zip": true,
+  "installer_sha256": "8230fd8757f0373ec9044de2d2e37cb3b0d75b6bbd296197a29b7f01a11eea3b"
+}

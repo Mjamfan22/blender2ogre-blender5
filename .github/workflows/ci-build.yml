@@ -1,25 +1,15 @@
-name: CI Build
-on: 
+name: Source and package integrity
+on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  linux:
-    runs-on: ubuntu-22.04
+  integrity:
+    runs-on: ubuntu-latest
     steps:
-    - name: Install Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y blender ogre-1.12-tools
-    - uses: actions/checkout@v2
-    - name: Test
-      run: |
-        mkdir -p ~/.config/blender/3.0/scripts/addons/
-        ln -s `pwd`/io_ogre ~/.config/blender/3.0/scripts/addons/
-        blender examples/armature-test.blend -b --python test/run.py
-        # verify that files were created
-        test -f test.scene
-        test -f Cube.mesh
-        test -f Cube.skeleton
-        test -f Material.material
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate source, documentation and exact installer bytes
+        run: python3 tools/repository_checks.py

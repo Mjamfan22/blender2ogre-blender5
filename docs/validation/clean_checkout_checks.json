@@ -1,0 +1,18 @@
+{
+  "version": "0.9.8",
+  "blender": "5.2.3 LTS",
+  "installed_zip": true,
+  "passed": 65,
+  "failed": 0,
+  "skipped": [
+    "original_robot_animations",
+    "original_ogrehead",
+    "existing_rig_name_is_not_reused",
+    "animated_robot_deformation_roundtrip",
+    "issue240_reporter_swaptest_geometry_roundtrip",
+    "issue142_reporter_animated_character_roundtrip",
+    "reported_bakugan_body_imports_all_three_base_textures",
+    "full_bakugan_import_matches_previous_release"
+  ],
+  "full_suite": false
+}

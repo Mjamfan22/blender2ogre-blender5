@@ -1,0 +1,327 @@
+{
+  "version": "0.9.10",
+  "blender": "5.2.3 LTS",
+  "installed_zip": true,
+  "passed": 78,
+  "failed": 0,
+  "skipped": [],
+  "full_suite": true,
+  "date": "2026-11-23",
+  "sha256": "68a6cc1394cc56e49ee27bd2feecfdd3643420fc8dc654f5cfa1c48ebf8d0d3d",
+  "bytes": 2263791,
+  "files": 59,
+  "tests": [
+    {
+      "test": "bundled_converter",
+      "passed": true
+    },
+    {
+      "test": "triangle_uv_colors_materials",
+      "passed": true
+    },
+    {
+      "test": "point_colors",
+      "passed": true
+    },
+    {
+      "test": "unshared_triangle",
+      "passed": true
+    },
+    {
+      "test": "shape_animation",
+      "passed": true
+    },
+    {
+      "test": "multiple_morph_clips",
+      "passed": true
+    },
+    {
+      "test": "node_animation",
+      "passed": true
+    },
+    {
+      "test": "original_robot_animations",
+      "passed": true
+    },
+    {
+      "test": "original_ogrehead",
+      "passed": true
+    },
+    {
+      "test": "nested_scene_transform",
+      "passed": true
+    },
+    {
+      "test": "invalid_input_cancelled",
+      "passed": true
+    },
+    {
+      "test": "scene_cameras_and_lights",
+      "passed": true
+    },
+    {
+      "test": "register_cycle",
+      "passed": true
+    },
+    {
+      "test": "disabled_modifiers_unchanged",
+      "passed": true
+    },
+    {
+      "test": "failed_export_preserves_state_and_files",
+      "passed": true
+    },
+    {
+      "test": "failed_scene_rolls_back_all_imported_ids",
+      "passed": true
+    },
+    {
+      "test": "source_xml_is_never_deleted",
+      "passed": true
+    },
+    {
+      "test": "binary_import_preserves_existing_xml_and_source",
+      "passed": true
+    },
+    {
+      "test": "materials_preserve_existing_and_translate_rgba",
+      "passed": true
+    },
+    {
+      "test": "quoted_texture_filename",
+      "passed": true
+    },
+    {
+      "test": "numeric_custom_normals_and_uv_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "unshared_colors_multiple_uvs_unused_slots",
+      "passed": true
+    },
+    {
+      "test": "unshared_without_material_or_uv",
+      "passed": true
+    },
+    {
+      "test": "shape_export_falls_back_without_data_loss",
+      "passed": true
+    },
+    {
+      "test": "node_fractional_timing_and_animation_import",
+      "passed": true
+    },
+    {
+      "test": "shared_action_uses_matching_slots",
+      "passed": true
+    },
+    {
+      "test": "invalid_vertex_index_rejected_without_changes",
+      "passed": true
+    },
+    {
+      "test": "mesh_overwrite_option_preserves_binary",
+      "passed": true
+    },
+    {
+      "test": "relocated_paths_and_malformed_configuration",
+      "passed": true
+    },
+    {
+      "test": "converter_timeout_terminates_process",
+      "passed": true
+    },
+    {
+      "test": "unicode_and_spaced_input_paths",
+      "passed": true
+    },
+    {
+      "test": "existing_rig_name_is_not_reused",
+      "passed": true
+    },
+    {
+      "test": "submesh_names_and_spaced_materials",
+      "passed": true
+    },
+    {
+      "test": "binary_unicode_directory",
+      "passed": true
+    },
+    {
+      "test": "animated_robot_deformation_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "bundled_upgrader_lod_and_edges",
+      "passed": true
+    },
+    {
+      "test": "combined_material_scene_references_exist",
+      "passed": true
+    },
+    {
+      "test": "issue248_selected_child_and_unselected_siblings",
+      "passed": true
+    },
+    {
+      "test": "issue248_selected_only_inside_merge_collection",
+      "passed": true
+    },
+    {
+      "test": "issue255_opaque_and_translucent_materials",
+      "passed": true
+    },
+    {
+      "test": "issue145_generated_and_packed_textures_without_conversion",
+      "passed": true
+    },
+    {
+      "test": "issue263_prefix_references_and_source_names",
+      "passed": true
+    },
+    {
+      "test": "issue263_manual_lod_prefix_references",
+      "passed": true
+    },
+    {
+      "test": "issue87_sparse_node_keys_preserve_endpoints",
+      "passed": true
+    },
+    {
+      "test": "issue59_mirror_toggle_preserves_modifier",
+      "passed": true
+    },
+    {
+      "test": "issue273_unshared_skin_weights_and_binary",
+      "passed": true
+    },
+    {
+      "test": "issue266_multiple_slotted_skeletal_clips",
+      "passed": true
+    },
+    {
+      "test": "issues231_240_camera_light_hierarchy_world_directions",
+      "passed": true
+    },
+    {
+      "test": "issue156_import_inheritance_variables_and_named_overrides",
+      "passed": true
+    },
+    {
+      "test": "issue156_missing_and_cyclic_material_dependencies_reported",
+      "passed": true
+    },
+    {
+      "test": "issue138_renamed_principled_packed_metal_roughness_map",
+      "passed": true
+    },
+    {
+      "test": "issue184_missing_image_converter_has_actionable_error",
+      "passed": true
+    },
+    {
+      "test": "issue263_external_material_names_not_prefixed",
+      "passed": true
+    },
+    {
+      "test": "issue272_import_operator_constructor_initializes_converter",
+      "passed": true
+    },
+    {
+      "test": "skeletal_export_disabled_does_not_leave_dangling_links",
+      "passed": true
+    },
+    {
+      "test": "issue273_filtered_bone_ids_match_both_geometry_modes",
+      "passed": true
+    },
+    {
+      "test": "issue142_shared_skeleton_falls_back_for_distinct_bind_space",
+      "passed": true
+    },
+    {
+      "test": "issue240_reporter_swaptest_geometry_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "issue142_reporter_animated_character_roundtrip",
+      "passed": true
+    },
+    {
+      "test": "exporter_placeholder_import_is_informational_and_keeps_geometry",
+      "passed": true
+    },
+    {
+      "test": "supplied_placeholder_definition_is_preserved_and_missing_names_warn",
+      "passed": true
+    },
+    {
+      "test": "ror_managed_base_recovers_reported_track_bus_and_tire_textures",
+      "passed": true
+    },
+    {
+      "test": "ror_managed_base_supports_unnamed_passes_and_real_bases_win",
+      "passed": true
+    },
+    {
+      "test": "ror_recovery_does_not_hide_unknown_parents_or_missing_images",
+      "passed": true
+    },
+    {
+      "test": "shared_pack_abstract_pass_uses_albedo_not_specular",
+      "passed": true
+    },
+    {
+      "test": "shared_named_materials_discovered_from_mesh_references",
+      "passed": true
+    },
+    {
+      "test": "explicit_resource_folder_resolves_shared_dependencies",
+      "passed": true
+    },
+    {
+      "test": "ambiguous_shared_texture_is_reported",
+      "passed": true
+    },
+    {
+      "test": "abstract_pass_cycles_do_not_recurse_forever",
+      "passed": true
+    },
+    {
+      "test": "quoted_named_pass_overrides_keep_inherited_texture",
+      "passed": true
+    },
+    {
+      "test": "standalone_lookup_stays_within_its_asset_folder",
+      "passed": true
+    },
+    {
+      "test": "inherited_alpha_rejection_preserves_image_alpha",
+      "passed": true
+    },
+    {
+      "test": "reported_bakugan_body_imports_all_three_base_textures",
+      "passed": true
+    },
+    {
+      "test": "shared_static_geometry_keeps_bulk_corner_attributes",
+      "passed": true
+    },
+    {
+      "test": "keep_submeshes_separate_still_works",
+      "passed": true
+    },
+    {
+      "test": "skeletal_shared_mesh_keeps_weights_and_rig",
+      "passed": true
+    },
+    {
+      "test": "multiple_vertex_buffers_and_declared_counts",
+      "passed": true
+    },
+    {
+      "test": "full_bakugan_import_matches_previous_release",
+      "passed": true
+    }
+  ]
+}

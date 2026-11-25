@@ -1,38 +1,19 @@
 ---
 name: Bug report
-about: Create a report to help us improve `blender2ogre`
+about: Report a reproducible problem with this Blender 5.2 adaptation
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 ---
 
-<!--
-If you have a question rather than reporting a bug please go to
-- https://gitter.im/OGRECave/ogre or
-- https://forums.ogre3d.org/
-where you will get much faster responses.
+**Versions**
+Blender version/build, add-on version, Windows version and converter name/version:
 
-This is a template helping you to create an issue which can be processed as quickly as possible.
--->
+**Steps and expected/actual behavior**
+Describe exact import/export options and how to reproduce the problem in a disposable scene.
 
-#### System Information
-- Ogre Version: :grey_question:
-- Operating System / Platform: :grey_question:
-- Blender Version: :grey_question:
+**Minimal sample and report**
+Attach only data you may share. Include the operation report and relevant screenshots; remove credentials, personal paths and unrelated pack content.
 
-#### Detailed description
-<!-- your description -->
-
-#### blender2ogre.log
-<!-- when attaching code or the log use triple backticks as below:
-```
-paste your log here
-```
--->
-
-#### OgreXMLConverter.log or OgreMeshTool.log
-<!-- when attaching code or the log use triple backticks as below:
-```
-paste your log here
-```
--->
+**Upgrade check**
+For an upgrade, confirm Blender was fully restarted and the reported add-on version is the installed release.
